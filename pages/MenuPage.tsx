@@ -71,7 +71,7 @@ const SettingsIcon: React.FC = () => (
                 <stop offset="100%" stopColor="#c084fc" />
             </linearGradient>
         </defs>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="url(#settings-grad-menu)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="url(#settings-grad-menu)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         <circle cx="12" cy="12" r="3" stroke="url(#settings-grad-menu)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
 );
@@ -109,6 +109,7 @@ const MenuPage: React.FC<MenuPageProps> = ({ onSelect, startInPracticeView = fal
     const [selectedPlanet, setSelectedPlanet] = useState<SelectedPlanetInfo | null>(null);
     const { t, isTabletMode } = useLanguage();
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const luminaLetters = useMemo(() => 'LUMINA'.split(''), []);
 
     useEffect(() => {
         const container = scrollContainerRef.current;
@@ -258,14 +259,29 @@ const MenuPage: React.FC<MenuPageProps> = ({ onSelect, startInPracticeView = fal
                                                 disableContentAnimation={true}
                                             />
                                         </div>
-                                        <div key="gateways-to-lumina" className="flex flex-col items-center gap-1.5 -my-2 z-0">
-                                            {Array.from({ length: 5 }).map((_, i) => (
-                                                <span key={i} className="text-2xl text-brand-accent-secondary/60 animate-pulse" style={{ animationDelay: `${i * 150}ms`}}>
-                                                    🕳️
-                                                </span>
+                                        <div key="gateways-to-lumina" className="flex flex-col items-center gap-4 z-0">
+                                            {luminaLetters.map((letter, i) => (
+                                                <div 
+                                                    key={i} 
+                                                    className="animate-tumble-gentle-xy" 
+                                                    style={{ 
+                                                        animationDelay: `${i * 200}ms`,
+                                                        animationDuration: '10s',
+                                                        transformStyle: 'preserve-3d',
+                                                    }}
+                                                >
+                                                    <LetterCube
+                                                        size={12}
+                                                        letter={letter}
+                                                        animationDelay="0s"
+                                                        faceClassName="bg-black/20 backdrop-blur-sm border border-brand-light/40"
+                                                        disableContentAnimation={true}
+                                                    />
+                                                </div>
                                             ))}
                                         </div>
                                         {[...planetData].reverse().flatMap((planet, index, arr) => {
+                                             const isMars = planet.name === t('planet_mars_name');
                                              const planetElement = (
                                                 <div 
                                                     key={planet.name} 
@@ -280,7 +296,8 @@ const MenuPage: React.FC<MenuPageProps> = ({ onSelect, startInPracticeView = fal
                                                         <div 
                                                             className="w-full h-full rounded-full bg-cover bg-center shadow-inner"
                                                             style={{ 
-                                                                backgroundImage: `url(${planet.imageUrl})`,
+                                                                backgroundImage: `url("${planet.imageUrl}")`,
+                                                                backgroundSize: isMars ? '160%' : 'cover',
                                                                 boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.7), 0 0 10px var(--brand-accent-secondary-glow)'
                                                             }}
                                                         >
@@ -301,11 +318,25 @@ const MenuPage: React.FC<MenuPageProps> = ({ onSelect, startInPracticeView = fal
                                             }
 
                                             const gateways = (
-                                                <div key={`gateways-${index}`} className="flex flex-col items-center gap-1.5 -my-2 z-0">
-                                                    {Array.from({ length: 5 }).map((_, i) => (
-                                                        <span key={i} className="text-2xl text-brand-accent-secondary/60 animate-pulse" style={{ animationDelay: `${i * 150}ms`}}>
-                                                            🕳️
-                                                        </span>
+                                                <div key={`gateways-${index}`} className="flex flex-col items-center gap-4 z-0">
+                                                    {luminaLetters.map((letter, i) => (
+                                                        <div 
+                                                            key={i} 
+                                                            className="animate-tumble-gentle-xy" 
+                                                            style={{ 
+                                                                animationDelay: `${i * 200}ms`,
+                                                                animationDuration: '10s',
+                                                                transformStyle: 'preserve-3d',
+                                                            }}
+                                                        >
+                                                            <LetterCube
+                                                                size={12}
+                                                                letter={letter}
+                                                                animationDelay="0s"
+                                                                faceClassName="bg-black/20 backdrop-blur-sm border border-brand-light/40"
+                                                                disableContentAnimation={true}
+                                                            />
+                                                        </div>
                                                     ))}
                                                 </div>
                                             );

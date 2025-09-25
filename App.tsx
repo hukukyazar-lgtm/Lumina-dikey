@@ -18,7 +18,7 @@ import { saveLocalHighScore } from './services/scoreService';
 import { soundService } from './services/soundService';
 import { saveGuestProgress, loadGuestProgress, clearGuestProgress, saveEndlessHighScore, loadEndlessHighScore, saveEndlessProgress, loadEndlessProgress, clearEndlessProgress, saveTotalMoney, loadTotalMoney } from './services/progressService';
 import type { GameStatus, WordChallenge, Difficulty, LevelProgress, GameMode, WordLength, SavedProgress, SavedEndlessState } from './types';
-import { difficultySettings, LIFE_BONUS_INTERVAL, STARTING_LIVES, MEMORY_GAME_INTERVAL, MAX_LIVES, difficultyProgression, difficultyPoints, difficultyBackgrounds, ENDLESS_TIMER, endlessAnimations, planetImageUrls } from './config';
+import { difficultySettings, LIFE_BONUS_INTERVAL, STARTING_LIVES, MEMORY_GAME_INTERVAL, MAX_LIVES, difficultyProgression, difficultyPoints, difficultyBackgrounds, ENDLESS_TIMER, endlessAnimations, planetImageUrls, MENU_BACKGROUND_URL } from './config';
 
 
 // Helper to get all unique background images
@@ -164,7 +164,7 @@ export default function App() {
             img.src = planetUrl;
         });
         // Set the initial background.
-        updateBackground('https://images.pexels.com/photos/2098428/pexels-photo-2098428.jpeg?auto=compress&cs=tinysrgb&w=1920');
+        updateBackground(MENU_BACKGROUND_URL);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -292,7 +292,7 @@ export default function App() {
 
   const handleReturnToMenu = useCallback(() => {
     stopTimer();
-    updateBackground('https://images.pexels.com/photos/2098428/pexels-photo-2098428.jpeg?auto=compress&cs=tinysrgb&w=1920');
+    updateBackground(MENU_BACKGROUND_URL);
     setGameStatus('menu');
     setGameMode(null);
     setDifficulty(null);
@@ -777,9 +777,9 @@ export default function App() {
 
   return (
     <>
-      <div className="fixed inset-0 w-full h-full transition-opacity duration-1000" style={{ backgroundImage: `url(${bgUrls[0]})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: bgIndex === 0 ? 1 : 0 }} />
-      <div className="fixed inset-0 w-full h-full transition-opacity duration-1000" style={{ backgroundImage: `url(${bgUrls[1]})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: bgIndex === 1 ? 1 : 0 }} />
-      <div className="fixed inset-0 bg-black/50" />
+      <div className="fixed inset-0 w-full h-full transition-opacity duration-1000" style={{ backgroundImage: `url("${bgUrls[0]}")`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: bgIndex === 0 ? 1 : 0 }} />
+      <div className="fixed inset-0 w-full h-full transition-opacity duration-1000" style={{ backgroundImage: `url("${bgUrls[1]}")`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: bgIndex === 1 ? 1 : 0 }} />
+      <div className="fixed inset-0 bg-black/30" />
       
       <div className="relative w-full h-screen font-sans text-brand-light overflow-hidden">
         {gameStatus === 'intro' ? (

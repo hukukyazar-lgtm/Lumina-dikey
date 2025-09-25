@@ -51,6 +51,8 @@ export const STARTING_LIVES = 3;
 export const MAX_LIVES = 6;
 export const ENDLESS_TIMER = 15;
 
+export const MENU_BACKGROUND_URL = 'https://images.pexels.com/photos/2150/sky-space-dark-galaxy.jpg?auto=compress&cs=tinysrgb&w=1920';
+
 export const endlessAnimations: string[] = [
   'animate-spin-novice',
   'animate-spin-apprentice',
@@ -107,105 +109,95 @@ export const endlessAnimations: string[] = [
 
 export const difficultyBackgrounds: Record<Difficulty, string[]> = {
   Novice: [
-    'https://images.pexels.com/photos/4245826/pexels-photo-4245826.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/1769356/pexels-photo-1769356.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/1933239/pexels-photo-1933239.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/1274260/pexels-photo-1274260.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/1938348/pexels-photo-1938348.jpeg?auto=compress&cs=tinysrgb&w=1920',
   ],
   Apprentice: [
-    'https://images.pexels.com/photos/2246476/pexels-photo-2246476.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/507410/pexels-photo-507410.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/2115217/pexels-photo-2115217.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/3994366/pexels-photo-3994366.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/73873/star-clusters-rosette-nebula-star-galaxies-73873.jpeg?auto=compress&cs=tinysrgb&w=1920',
   ],
   Adept: [
-    'https://images.pexels.com/photos/7234382/pexels-photo-7234382.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/3802510/pexels-photo-3802510.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/2086361/pexels-photo-2086361.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/110854/pexels-photo-110854.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/3554424/pexels-photo-3554424.jpeg?auto=compress&cs=tinysrgb&w=1920',
   ],
   Skilled: [
-    'https://images.pexels.com/photos/956999/pexels-photo-956999.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/370799/pexels-photo-370799.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/406152/pexels-photo-406152.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/956981/pexels-photo-956981.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/1257860/pexels-photo-1257860.jpeg?auto=compress&cs=tinysrgb&w=1920',
   ],
   Seasoned: [
-    'https://images.pexels.com/photos/325185/pexels-photo-325185.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/1577033/pexels-photo-1577033.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/1423600/pexels-photo-1423600.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/32237/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/998641/pexels-photo-998641.jpeg?auto=compress&cs=tinysrgb&w=1920',
   ],
   Veteran: [
-    'https://images.pexels.com/photos/1779487/pexels-photo-1779487.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/735911/pexels-photo-735911.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/247599/pexels-photo-247599.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/220201/pexels-photo-220201.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/41951/solar-system-emergence-spitzer-space-telescope-telescope-41951.jpeg?auto=compress&cs=tinysrgb&w=1920',
   ],
   Master: [
-    'https://images.pexels.com/photos/47367/full-moon-moon-bright-sky-47367.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/998641/pexels-photo-998641.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/1136575/pexels-photo-1136575.jpeg?auto=compress&cs=tinysrgb&w=1920',
-  ],
-  Grandmaster: [
     'https://images.pexels.com/photos/1169754/pexels-photo-1169754.jpeg?auto=compress&cs=tinysrgb&w=1920',
     'https://images.pexels.com/photos/39561/solar-flare-sun-eruption-energy-39561.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  ],
+  Grandmaster: [
     'https://images.pexels.com/photos/1252890/pexels-photo-1252890.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/47367/full-moon-moon-bright-sky-47367.jpeg?auto=compress&cs=tinysrgb&w=1920',
   ],
   Legend: [
-    'https://images.pexels.com/photos/1083822/pexels-photo-1083822.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/5474028/pexels-photo-5474028.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/5473955/pexels-photo-5473955.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/1624496/pexels-photo-1624496.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/373543/pexels-photo-373543.jpeg?auto=compress&cs=tinysrgb&w=1920',
   ],
   Mythic: [
-    'https://images.pexels.com/photos/1624496/pexels-photo-1624496.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/129731/pexels-photo-129731.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/41951/solar-system-emergence-spitzer-space-telescope-telescope-41951.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/2150/sky-space-dark-galaxy.jpg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/1274260/pexels-photo-1274260.jpeg?auto=compress&cs=tinysrgb&w=1920',
   ],
 };
 
-// High-resolution, realistic image URLs for planets
+// High-resolution, artistic/illustrative image URLs for planets
 export const planetImageUrls: string[] = [
     // 1. Earth
-    'https://www.solarsystemscope.com/textures/download/2k_earth_daymap.jpg',
-    // 2. Venus
-    'https://www.solarsystemscope.com/textures/download/2k_venus_surface.jpg',
-    // 3. Mars
-    'https://www.solarsystemscope.com/textures/download/2k_mars.jpg',
-    // 4. Mercury
-    'https://www.solarsystemscope.com/textures/download/2k_mercury.jpg',
-    // 5. Ceres
-    'https://www.solarsystemscope.com/textures/download/2k_ceres.jpg',
-    // 6. Jupiter
-    'https://www.solarsystemscope.com/textures/download/2k_jupiter.jpg',
-    // 7. Saturn
-    'https://www.solarsystemscope.com/textures/download/2k_saturn.jpg',
-    // 8. Uranus
-    'https://images.pexels.com/photos/16287308/pexels-photo-16287308/free-photo-of-planet-uranus.jpeg?auto=compress&cs=tinysrgb&w=800',
-    // 9. Neptune
-    'https://images.pexels.com/photos/47367/full-moon-moon-bright-sky-47367.jpeg?auto=compress&cs=tinysrgb&w=800&fit=crop&h=800&w=800',
-    // 10. Pluto
-    'https://images.pexels.com/photos/16287303/pexels-photo-16287303/free-photo-of-planet-pluto.jpeg?auto=compress&cs=tinysrgb&w=800',
-    // 11. Haumea (Artistic representation)
-    'https://images.pexels.com/photos/11158145/pexels-photo-11158145.jpeg?auto=compress&cs=tinysrgb&w=800',
-    // 12. Makemake (Artistic representation)
-    'https://images.pexels.com/photos/11158156/pexels-photo-11158156.jpeg?auto=compress&cs=tinysrgb&w=800',
-    // 13. Eris (Artistic representation)
-    'https://images.pexels.com/photos/73910/mars-mars-rover-space-travel-robot-73910.jpeg?auto=compress&cs=tinysrgb&w=800&fit=crop&h=800&w=800',
-    // 14. Proxima Centauri b (Artistic representation)
-    'https://images.pexels.com/photos/87651/earth-blue-planet-globe-planet-87651.jpeg?auto=compress&cs=tinysrgb&w=800&fit=crop&h=800&w=800',
-    // 15. TRAPPIST-1 System (Artistic representation)
-    'https://images.pexels.com/photos/2156/sky-earth-space-working.jpg?auto=compress&cs=tinysrgb&w=800',
-    // 16. 55 Cancri e (Janssen) (Artistic representation)
-    'https://images.pexels.com/photos/1252890/pexels-photo-1252890.jpeg?auto=compress&cs=tinysrgb&w=800',
-    // 17. 51 Pegasi b (Dimidium) (Artistic representation)
-    'https://images.pexels.com/photos/220201/pexels-photo-220201.jpeg?auto=compress&cs=tinysrgb&w=800',
-    // 18. HD 189733b (Artistic representation of a blue gas giant)
-    'https://images.pexels.com/photos/2150/sky-space-dark-galaxy.jpg?auto=compress&cs=tinysrgb&w=800&fit=crop&h=800&w=800',
-    // 19. HD 209458 b (Osiris) (Artistic representation)
-    'https://images.pexels.com/photos/1274260/pexels-photo-1274260.jpeg?auto=compress&cs=tinysrgb&w=800',
-    // 20. Kepler-186f (Artistic representation of a red-hued planet)
-    'https://images.pexels.com/photos/1169754/pexels-photo-1169754.jpeg?auto=compress&cs=tinysrgb&w=800',
-    // 21. TrES-2b (Artistic representation of a dark planet)
-    'https://images.pexels.com/photos/1979069/pexels-photo-1979069.jpeg?auto=compress&cs=tinysrgb&w=800&fit=crop&h=800&w=800',
-    // 22. Kepler-452b (Artistic representation)
-    'https://images.pexels.com/photos/2159/sky-earth-space-planet.jpg?auto=compress&cs=tinysrgb&w=800',
-    // 23. PSR B1257+12 (Pulsar - artistic representation)
-    'https://images.pexels.com/photos/1257860/pexels-photo-1257860.jpeg?auto=compress&cs=tinysrgb&w=800',
-    // 24. M51-ULS-1b (Galaxy M51 as a proxy)
-    'https://images.pexels.com/photos/998641/pexels-photo-998641.jpeg?auto=compress&cs=tinysrgb&w=800'
+    'https://storage.googleapis.com/luminaassets/D%C3%BCnya.jpg',
+    // 2. Venus (Hot, cloudy)
+    'https://storage.googleapis.com/luminaassets/Ven%C3%BCs.jpg',
+    // 3. Mars (Red planet) - USER SPECIFIED
+    'https://storage.googleapis.com/luminaassets/Mars.jpg',
+    // 4. Mercury (Rocky, cratered)
+    'https://storage.googleapis.com/luminaassets/Merk%C3%BCr.jpg',
+    // 5. Ceres (Icy asteroid)
+    'https://storage.googleapis.com/luminaassets/Ceres.jpg',
+    // 6. Jupiter (Great Red Spot, artistic)
+    'https://storage.googleapis.com/luminaassets/J%C3%BCpiter.jpg',
+    // 7. Saturn (Rings)
+    'https://storage.googleapis.com/luminaassets/Sat%C3%BCrn.jpg',
+    // 8. Uranus (Pale blue/green)
+    'https://storage.googleapis.com/luminaassets/Uran%C3%BCs.jpg',
+    // 9. Neptune (Deep blue)
+    'https://storage.googleapis.com/luminaassets/Neptune.jpg',
+    // 10. Pluto (Distant, icy)
+    'https://storage.googleapis.com/luminaassets/Pluto.jpg',
+    // 11. Haumea (Artistic representation, elliptical)
+    'https://storage.googleapis.com/luminaassets/Haumea.jpg',
+    // 12. Makemake (Artistic representation, reddish)
+    'https://storage.googleapis.com/luminaassets/Makemake.jpg',
+    // 13. Eris (Artistic representation, rocky)
+    'https://storage.googleapis.com/luminaassets/Eris.jpg',
+    // 14. Proxima Centauri b (Purple/red nebula planet)
+    'https://storage.googleapis.com/luminaassets/Cantaruri.jpg',
+    // 15. TRAPPIST-1 System (Multiple planets)
+    'https://storage.googleapis.com/luminaassets/Trapiist.jpg',
+    // 16. 55 Cancri e (Janssen) (Crystalline feel)
+    'https://storage.googleapis.com/luminaassets/Cancri.jpg',
+    // 17. 51 Pegasi b (Dimidium) (Hot Jupiter)
+    'https://storage.googleapis.com/luminaassets/Pegasi.jpg',
+    // 18. HD 189733b (Deep blue planet)
+    'https://storage.googleapis.com/luminaassets/Pegasi.jpg',
+    // 19. HD 209458 b (Osiris) (Atmospheric glow)
+    'https://storage.googleapis.com/luminaassets/Osiris.jpg',
+    // 20. Kepler-186f (Red-tinged nebula planet)
+    'https://storage.googleapis.com/luminaassets/Kepler186.jpg',
+    // 21. TrES-2b (Dark planet)
+    'https://storage.googleapis.com/luminaassets/Blackplanet.jpg',
+    // 22. Kepler-452b (Earth-like)
+    'https://storage.googleapis.com/luminaassets/Kepler.jpg',
+    // 23. PSR B1257+12 (Pulsar, abstract)
+    'https://storage.googleapis.com/luminaassets/Psr.jpg',
+    // 24. M51-ULS-1b (Whirlpool galaxy)
+    'https://storage.googleapis.com/luminaassets/M51.jpg'
 ];

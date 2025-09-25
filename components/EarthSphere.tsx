@@ -13,7 +13,7 @@ const EarthSphere: React.FC<EarthSphereProps> = ({ size }) => {
     // Fallback color in case the image fails to load
     backgroundColor: '#3a8dce', 
     // A different, high-quality, tileable Earth texture
-    backgroundImage: `url(https://images.pexels.com/photos/2422/sky-earth-galaxy-universe.jpg?auto=compress&cs=tinysrgb&w=800)`, 
+    backgroundImage: `url(https://imgur.com/a/dYtQiDm)`, 
     // background-size must be 200% wide for a seamless 360-degree rotation animation
     backgroundSize: '200% 100%',
     // Inner shadow for depth and atmospheric glow

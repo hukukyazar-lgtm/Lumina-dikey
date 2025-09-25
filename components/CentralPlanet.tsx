@@ -11,15 +11,16 @@ interface CentralPlanetProps {
 
 const CentralPlanet: React.FC<CentralPlanetProps> = ({ imageUrl, name, distance, onClose, onPlayEndless }) => {
   const { t } = useLanguage();
+  const isMars = name === t('planet_mars_name');
 
   const sphereStyle: React.CSSProperties = {
     width: '300px',
     height: '300px',
     borderRadius: '50%',
     position: 'relative',
-    backgroundImage: imageUrl ? `url(${imageUrl})` : 'none',
+    backgroundImage: imageUrl ? `url("${imageUrl}")` : 'none',
     backgroundColor: imageUrl ? 'transparent' : '#1d1b31',
-    backgroundSize: '200% 100%',
+    backgroundSize: isMars ? '160%' : 'cover',
     backgroundPosition: 'center',
     filter: 'drop-shadow(0 0 25px var(--brand-accent-secondary-glow)) drop-shadow(0 0 10px rgba(255,255,255,0.5))',
     cursor: 'pointer',
@@ -55,7 +56,7 @@ const CentralPlanet: React.FC<CentralPlanetProps> = ({ imageUrl, name, distance,
       >
         {/* Planet Sphere */}
         <div
-          className={`relative ${imageUrl ? 'animate-planet-spin' : ''}`}
+          className={`relative animate-star-pulse`}
           style={sphereStyle}
           onClick={onClose}
           role="button"
