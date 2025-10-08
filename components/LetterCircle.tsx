@@ -1,20 +1,22 @@
 import React, { useMemo } from 'react';
 import type { Difficulty } from '../types';
 import LetterCube from './LetterCube';
-import { difficultySettings } from '../config';
+import { difficultySettings, ENDLESS_TIMER } from '../config';
 
 interface LetterCircleProps {
   word: string;
   difficulty: Difficulty;
   level: number;
   gameMode: 'progressive' | 'practice' | 'duel' | 'endless' | null;
-  questionNumberInDifficulty: number;
   trophyCount: number;
   animationClass?: string;
   animationDurationValue?: number;
+  activeTheme?: string;
+  isSpecialCube?: boolean;
+  isExiting?: boolean;
 }
 
-const LetterCircle: React.FC<LetterCircleProps> = ({ word, difficulty, level, gameMode, questionNumberInDifficulty, trophyCount, animationClass, animationDurationValue }) => {
+const LetterCircle: React.FC<LetterCircleProps> = ({ word, difficulty, level, gameMode, trophyCount, animationClass, animationDurationValue, activeTheme, isSpecialCube, isExiting = false }) => {
   const letters = word.split('');
   const radius = 100; // Radius of the circle on which cubes are placed
   const cubeSize = 56; // Size of each individual letter cube
@@ -45,25 +47,20 @@ const LetterCircle: React.FC<LetterCircleProps> = ({ word, difficulty, level, ga
     // Speed increases by 15% for each trophy earned.
     const trophySpeedFactor = 1 + (trophyCount * 0.15);
     const trophyAdjustedDuration = levelAdjustedDuration / trophySpeedFactor;
-
-    // In progressive mode, if it's the second question of the same difficulty (progress is 1),
-    // increase speed further (decrease duration by dividing by 2.25).
-    if (gameMode === 'progressive' && questionNumberInDifficulty === 1) {
-      return trophyAdjustedDuration / 2.25;
-    }
     
     return trophyAdjustedDuration;
-  }, [difficulty, level, gameMode, questionNumberInDifficulty, trophyCount]);
+  }, [difficulty, level, trophyCount]);
 
-  const finalAnimationClass = animationClass || internalAnimationClass;
+  const finalAnimationClass = isSpecialCube ? '' : (animationClass || internalAnimationClass);
   const finalAnimationDuration = animationDurationValue || internalAnimationDuration;
 
   const animationContainer = (
     <div
+      key={word} // FIX: Add key here to force re-mount and restart animation
       className={`relative w-full h-full ${finalAnimationClass}`}
       style={{
         transformStyle: 'preserve-3d',
-        animationDuration: `${finalAnimationDuration}s`,
+        animationDuration: isSpecialCube ? undefined : `${finalAnimationDuration}s`,
       }}
     >
       <div className="absolute w-full h-full" style={{ transformStyle: 'preserve-3d' }}>
@@ -86,7 +83,15 @@ const LetterCircle: React.FC<LetterCircleProps> = ({ word, difficulty, level, ga
                 transformStyle: 'preserve-3d',
               }}
             >
-              <LetterCube letter={letter} size={cubeSize} animationDelay={animationDelay} />
+              {/* FIX: Changed prop 'theme' to 'activeTheme' to match the LetterCube component's props. */}
+              <LetterCube 
+                letter={letter} 
+                size={cubeSize} 
+                animationDelay={animationDelay} 
+                activeTheme={activeTheme}
+                isSpecialCube={isSpecialCube}
+                speed={finalAnimationDuration}
+              />
             </div>
           );
         })}
@@ -94,9 +99,10 @@ const LetterCircle: React.FC<LetterCircleProps> = ({ word, difficulty, level, ga
     </div>
   );
 
+  const containerAnimation = isExiting ? 'animate-fly-away' : 'animate-circle-enter';
+
   return (
-    <div className="relative w-72 h-72 flex items-center justify-center animate-circle-enter" style={{ perspective: '1000px' }}>
-      {/* Timer is now rendered in GamePage.tsx to prevent re-renders */}
+    <div className={`relative w-72 h-72 flex items-center justify-center ${containerAnimation}`} style={{ perspective: '1000px' }}>
       {difficulty === 'Novice' && gameMode !== 'endless' ? (
         <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(60deg)', width: '100%', height: '100%' }}>
           {animationContainer}

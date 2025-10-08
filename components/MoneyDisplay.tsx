@@ -23,12 +23,12 @@ const MoneyDisplay: React.FC<MoneyDisplayProps> = ({ money }) => {
     prevMoneyRef.current = money;
   }, [money]);
   
-  const panelClasses = 'bg-gradient-to-br from-white/10 to-white/5 border-white/20';
+  const panelClasses = 'bg-gradient-to-br from-brand-secondary/50 to-brand-primary/50 border-brand-light/10';
 
   return (
     <div className={`h-10 flex items-center justify-center ${panelClasses} backdrop-blur-sm border px-4 sm:px-6 shadow-bevel-inner rounded-lg`}>
       {/* Money */}
-      <span className={`text-lg sm:text-xl font-bold text-brand-light transition-transform ${isAnimating ? 'animate-score-pop' : ''}`}>
+      <span className={`text-lg sm:text-xl font-bold text-brand-warning transition-transform ${isAnimating ? 'animate-score-pop' : ''}`}>
         <span className="inline-block mr-1">☄️</span>{money}
       </span>
     </div>

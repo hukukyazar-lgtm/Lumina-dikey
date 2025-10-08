@@ -101,7 +101,7 @@ const GameOverPage: React.FC<GameOverPageProps> = ({ score, level, missedWord, o
                     {isEndless ? (
                         <div className="flex-1">
                             <p className="text-lg sm:text-xl text-brand-light/80">{t('totalEarnings')}</p>
-                            <p className="text-4xl sm:text-5xl font-bold text-brand-light">
+                            <p className="text-4xl sm:text-5xl font-bold text-brand-warning">
                                 <span className="inline-block mr-2">☄️</span>{finalMoney}
                             </p>
                         </div>

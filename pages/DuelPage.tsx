@@ -109,7 +109,7 @@ const DuelPage: React.FC<DuelPageProps> = ({
   duelRoundWinsCount,
   countdownDisplay
 }) => {
-    const { t } = useLanguage();
+    const { t, isTabletMode } = useLanguage();
     const [popup, setPopup] = useState<{ text: string, player: 1 | 2, key: number } | null>(null);
     const isLoading = gameStatus === 'loading' || gameStatus === 'advancing';
     const shouldBlur = gameStatus === 'countdown' || isPaused;
@@ -148,7 +148,7 @@ const DuelPage: React.FC<DuelPageProps> = ({
                     roundWinners={duelRoundWinners}
                     choices={choices}
                     onChoice={onChoice}
-                    isRotated={true}
+                    isRotated={isTabletMode}
                     isDisabled={isLoading || isPaused || (duelTurn !== 'first' && duelTurn !== 2)}
                     roundTitle={roundTitle}
                 />
@@ -165,13 +165,13 @@ const DuelPage: React.FC<DuelPageProps> = ({
                         aria-label={t('pauseAria')}
                         role="button"
                     >
+                        {/* FIX: Removed the 'questionNumberInDifficulty' prop as it does not exist on the LetterCircle component. */}
                         <LetterCircle
                             key={wordChallenge.correctWord}
                             word={wordChallenge.correctWord}
                             difficulty={difficulty}
                             level={1}
                             gameMode="duel"
-                            questionNumberInDifficulty={0}
                             trophyCount={0}
                         />
                     </div>

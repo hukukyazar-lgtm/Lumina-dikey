@@ -17,16 +17,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({ icon, label, onClick, disabled,
     animationDelay: animationDelay,
   } as React.CSSProperties;
 
-  // Map text color classes to border color classes for the cube faces
-  const colorMap: Record<string, string> = {
-    'text-brand-accent': 'border-brand-accent/40',
-    'text-red-500': 'border-red-500/40',
-    'text-brand-accent-secondary': 'border-brand-accent-secondary/40',
-    'text-brand-warning': 'border-brand-warning/40',
-    'text-purple-500': 'border-purple-500/40',
-  };
-  const borderColorClass = colorMap[color] || 'border-brand-light/40';
-  const faceClassName = `bg-black/20 backdrop-blur-sm ${borderColorClass}`;
+  const faceClassName = `bg-brand-bg border border-brand-light/30`;
 
   return (
     <button
@@ -48,7 +39,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({ icon, label, onClick, disabled,
           disableContentAnimation={true} // Content (icon) shouldn't animate on its own
         />
       </div>
-      <span className="text-xs sm:text-sm font-semibold text-brand-light/80 group-hover:text-white transition-colors">{label}</span>
+      <span className="text-xs sm:text-sm font-semibold text-brand-light/70 group-hover:text-brand-light transition-colors">{label}</span>
     </button>
   );
 };

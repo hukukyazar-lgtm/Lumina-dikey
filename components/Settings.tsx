@@ -5,7 +5,6 @@ import { soundService } from '../services/soundService';
 
 interface SettingsProps {
   onClose: () => void;
-  playerName: string;
 }
 
 // A generic toggle component for switching between options
@@ -25,7 +24,7 @@ const OptionToggle: React.FC<{
   const widthClass = `w-1/${numOptions}`;
 
   return (
-    <div className={`relative flex w-full p-1 bg-brand-secondary rounded-lg border-2 border-brand-secondary shadow-inner-strong`}>
+    <div className={`relative flex w-full p-1 bg-black/10 rounded-lg border-2 border-transparent shadow-inner-strong`}>
       {/* Sliding background pill */}
       <div
         className={`absolute top-1 bottom-1 ${widthClass} rounded-md bg-brand-accent-secondary shadow-lg transition-transform duration-300 ease-in-out`}
@@ -37,7 +36,7 @@ const OptionToggle: React.FC<{
           key={option.value}
           onClick={() => handleClick(option.value)}
           className={`relative z-10 w-1/2 py-2 text-lg font-extrabold transition-colors duration-300 rounded-md focus:outline-none ${
-            value === option.value ? 'text-brand-bg' : 'text-brand-light/70 hover:text-white'
+            value === option.value ? 'text-white' : 'text-brand-light/70 hover:text-brand-light'
           }`}
         >
           {option.label}
@@ -59,7 +58,7 @@ const OptionSlider: React.FC<{
 
     const sliderProgress = value * 100;
 
-    const trackStyle = { background: `linear-gradient(to right, var(--brand-accent-secondary) ${sliderProgress}%, rgba(0,0,0,0.3) ${sliderProgress}%)` };
+    const trackStyle = { background: `linear-gradient(to right, var(--brand-accent-secondary) ${sliderProgress}%, rgba(0,0,0,0.1) ${sliderProgress}%)` };
 
     return (
         <div className="flex items-center gap-4 w-full">
@@ -74,7 +73,7 @@ const OptionSlider: React.FC<{
                 value={value}
                 onChange={handleVolumeChange}
                 aria-label={label}
-                className="w-full h-3 rounded-lg appearance-none cursor-pointer range-lg custom-slider border border-black/20"
+                className="w-full h-2 rounded-lg appearance-none cursor-pointer range-lg custom-slider"
                 style={trackStyle}
             />
         </div>
@@ -82,7 +81,7 @@ const OptionSlider: React.FC<{
 };
 
 
-const Settings: React.FC<SettingsProps> = ({ onClose, playerName }) => {
+const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     const { 
         uiLanguage, 
         setUiLanguage, 
@@ -102,7 +101,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, playerName }) => {
 
     return (
         <div className="fixed inset-0 bg-brand-bg/90 backdrop-blur-md z-50 flex flex-col items-center justify-center animate-appear p-4">
-            <div className={`w-full max-w-md text-center p-6 sm:p-8 bg-brand-primary backdrop-blur-sm border-2 border-brand-light/20 rounded-2xl shadow-2xl shadow-black/50 custom-scrollbar overflow-y-auto max-h-[95vh]`}>
+            <div className={`w-full max-w-md text-center p-6 sm:p-8 bg-brand-primary backdrop-blur-sm border-2 border-white/40 rounded-2xl shadow-2xl shadow-black/20 custom-scrollbar overflow-y-auto max-h-[95vh]`}>
                 <h2 className="text-4xl sm:text-5xl font-extrabold text-brand-light mb-8">{t('settings')}</h2>
 
                 <div className="space-y-6">
@@ -128,22 +127,15 @@ const Settings: React.FC<SettingsProps> = ({ onClose, playerName }) => {
                     </div>
                 </div>
 
-                {/* Account Section */}
-                <div className="mt-8 pt-6 border-t border-brand-light/20">
-                    <h3 className="text-xl sm:text-2xl font-bold text-brand-accent-secondary mb-3">Account</h3>
-                    <p className="text-brand-light/70 mb-4">Logged in as: <strong>{playerName}</strong></p>
-                </div>
-
-
                 <button 
                     onClick={onClose} 
                     className="
                         w-full max-w-xs mt-12 text-center text-xl sm:text-2xl font-extrabold p-4 rounded-lg
                         transform transition-all duration-150 ease-in-out
-                        backdrop-blur-sm shadow-bevel-inner border text-brand-light focus:outline-none
-                        bg-brand-accent/50 border-brand-accent/80 shadow-[0_4px_0_var(--brand-accent-shadow)]
-                        hover:bg-brand-accent/70 hover:shadow-[0_6px_0_var(--brand-accent-shadow),0_0_20px_var(--brand-accent)]
-                        active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-shadow)]
+                        backdrop-blur-sm shadow-lg border text-white focus:outline-none
+                        bg-brand-accent border-transparent
+                        hover:shadow-xl hover:-translate-y-1
+                        active:translate-y-0 active:shadow-lg
                     "
                 >
                     {t('back')}

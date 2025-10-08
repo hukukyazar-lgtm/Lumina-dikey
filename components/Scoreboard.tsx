@@ -25,7 +25,7 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ score }) => {
     prevScoreRef.current = score;
   }, [score]);
   
-  const panelClasses = 'bg-gradient-to-br from-white/10 to-white/5 border-white/20';
+  const panelClasses = 'bg-gradient-to-br from-brand-secondary/50 to-brand-primary/50 border-brand-light/10';
 
   return (
     <div className={`h-10 flex items-center justify-center ${panelClasses} backdrop-blur-sm border px-4 sm:px-6 shadow-bevel-inner rounded-lg`}>

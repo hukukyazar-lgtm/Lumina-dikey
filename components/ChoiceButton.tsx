@@ -7,9 +7,10 @@ interface ChoiceButtonProps {
   onClick: (word: string) => void;
   disabled: boolean;
   status: 'default' | 'correct' | 'incorrect';
+  customTextureUrl?: string | null;
 }
 
-const ChoiceButton = forwardRef<HTMLButtonElement, ChoiceButtonProps>(({ word, onClick, disabled, status }, ref) => {
+const ChoiceButton = forwardRef<HTMLButtonElement, ChoiceButtonProps>(({ word, onClick, disabled, status, customTextureUrl }, ref) => {
   // Dynamically adjust font size based on word length to maximize size without overflow.
   const getFontSizeClass = (wordLength: number): string => {
     if (wordLength <= 5) return 'text-4xl sm:text-5xl';
@@ -21,54 +22,68 @@ const ChoiceButton = forwardRef<HTMLButtonElement, ChoiceButtonProps>(({ word, o
   const fontSizeClass = getFontSizeClass(word.length);
 
   const baseClasses = `
-    w-full text-center font-extrabold p-3 sm:p-4 rounded-full
-    transform transition-all duration-150 ease-in-out
-    shadow-bevel-inner border
-    text-brand-light focus:outline-none
+    w-full text-center font-sans p-3 sm:p-4
+    transform transition-all duration-200 ease-in-out
+    border
+    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-bg focus:ring-brand-warning
   `;
 
-  const defaultBgClasses = 'bg-gradient-to-br from-white/10 to-white/5 hover:from-white/20 hover:to-white/10';
-
-  // Define styles for different states
   const statusStyles = {
     default: {
-      bg: defaultBgClasses,
-      border: 'border-brand-accent-secondary/40',
-      shadow: 'shadow-[0_4px_0_var(--brand-accent-secondary-shadow)]',
-      hover: 'hover:shadow-[0_6px_0_var(--brand-accent-secondary-shadow)]',
-      active: 'active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-secondary-shadow)]',
       animation: '',
     },
     correct: {
-      bg: 'bg-brand-accent-secondary/30',
-      border: 'border-brand-accent-secondary/60',
-      shadow: 'shadow-[0_4px_0_var(--brand-accent-secondary-shadow)]',
-      hover: '',
-      active: '',
+      bg: 'bg-brand-correct/80',
+      border: 'border-[var(--brand-correct-shadow)]',
+      shadow: 'shadow-md shadow-brand-correct/30',
+      text: 'text-[var(--brand-bg-gradient-end)]',
       animation: 'animate-correct-pop',
     },
     incorrect: {
-      bg: 'bg-brand-accent/30',
-      border: 'border-brand-accent/60',
-      shadow: 'shadow-[0_4px_0_var(--brand-accent-shadow)]',
-      hover: '',
-      active: '',
-      animation: 'animate-shake-horizontal',
+      bg: 'bg-brand-accent/80',
+      border: 'border-[var(--brand-accent-shadow)]',
+      shadow: 'shadow-md shadow-brand-accent/30',
+      text: 'text-[var(--brand-bg-gradient-end)]',
+      animation: 'animate-hand-shake',
     },
   };
 
   const currentStatus = statusStyles[status];
 
-  // Combine classes, only applying hover/active effects for the default state
+  // In default state, we apply the custom structure. In correct/incorrect states, we use the theme's feedback styles.
+  const buttonStyle: React.CSSProperties = status === 'default'
+    ? {
+        borderRadius: 'var(--custom-button-border-radius)',
+        boxShadow: `var(--custom-button-box-shadow), inset 0 1px 1px rgba(255, 255, 255, var(--custom-button-highlight-intensity)), inset 0 -1px 1px rgba(0, 0, 0, calc(var(--custom-button-highlight-intensity) * 0.5))`,
+        background: `var(--custom-button-bg)`,
+        borderColor: `var(--custom-button-border-color)`,
+        color: `var(--custom-button-text-color)`,
+      }
+    : {};
+  
+  let effectiveTextClass = '';
+  let textWrapperClass = '';
+
+  // Texture is applied on top of the structural background
+  const useCustomTexture = status === 'default' && customTextureUrl;
+  if (useCustomTexture) {
+      buttonStyle.backgroundImage = `linear-gradient(rgba(26, 14, 42, 0.7), rgba(26, 14, 42, 0.7)), url(${customTextureUrl}), var(--custom-button-bg)`;
+      buttonStyle.backgroundSize = 'cover';
+      buttonStyle.backgroundPosition = 'center';
+      buttonStyle.color = 'var(--brand-light)'; // Ensure high contrast
+      textWrapperClass = 'drop-shadow-[0_2px_2px_rgba(0,0,0,0.7)]';
+  } else if (status !== 'default') {
+      effectiveTextClass = currentStatus.text;
+  }
+  
   const combinedClasses = `
     ${baseClasses}
     ${fontSizeClass}
-    backdrop-blur-sm
-    ${currentStatus.bg}
-    ${currentStatus.border}
-    ${currentStatus.shadow}
-    ${status === 'default' ? currentStatus.hover : ''}
-    ${status === 'default' ? currentStatus.active : ''}
+    ${status !== 'default' ? currentStatus.bg : ''}
+    ${status !== 'default' ? currentStatus.border : ''}
+    ${status !== 'default' ? currentStatus.shadow : ''}
+    ${effectiveTextClass}
+    ${status === 'default' ? 'hover:brightness-110 active:translate-y-0.5' : ''}
     ${currentStatus.animation}
   `;
 
@@ -85,8 +100,9 @@ const ChoiceButton = forwardRef<HTMLButtonElement, ChoiceButtonProps>(({ word, o
       onClick={handleClick}
       disabled={disabled}
       className={`${combinedClasses} ${disabledClasses}`}
+      style={buttonStyle}
     >
-      {word}
+      <span className={textWrapperClass}>{word}</span>
     </button>
   );
 });

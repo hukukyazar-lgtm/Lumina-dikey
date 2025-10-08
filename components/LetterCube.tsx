@@ -1,4 +1,6 @@
-import React from 'react';
+
+
+import React, { useMemo } from 'react';
 
 interface LetterCubeProps {
   letter?: string;
@@ -8,10 +10,81 @@ interface LetterCubeProps {
   faceClassName?: string;
   noContent?: boolean;
   disableContentAnimation?: boolean;
+  activeTheme?: string; // Prop name clarified
+  isSpecialCube?: boolean;
+  speed?: number;
 }
 
-const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDelay, faceClassName, noContent, disableContentAnimation = false }) => {
+const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDelay, faceClassName, noContent, disableContentAnimation = false, activeTheme = 'default', isSpecialCube, speed }) => {
   const translateZ = size / 2;
+
+  // Generate random visual properties once per cube instance.
+  // The useMemo hook ensures these values are calculated only when the component mounts.
+  // Since the parent LetterCircle component gets a new key for each word, these cubes
+  // will re-mount and get new random values for each question.
+  const randomValues = useMemo(() => {
+    const selfRotateAnimations = [
+        'animate-self-rotate-x',
+        'animate-self-rotate-y',
+        'animate-self-rotate-z',
+        'animate-self-rotate-xy',
+        'animate-none'
+    ];
+    
+    return {
+      opacity: Math.random() * 0.4 + 0.6, // Opacity from 0.6 to 1.0
+      borderWidth: Math.floor(Math.random() * 3) + 1, // Border width from 1px to 3px
+      selfRotationClass: selfRotateAnimations[Math.floor(Math.random() * selfRotateAnimations.length)],
+      selfRotationDuration: Math.random() * 10 + 8, // Duration from 8s to 18s
+    };
+  }, []);
+
+
+  if (isSpecialCube) {
+    const contentSize = Math.floor(size * 0.65);
+    const specialFaceStyle: React.CSSProperties = {
+        position: 'absolute',
+        width: `${size}px`,
+        height: `${size}px`,
+        backfaceVisibility: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: `${contentSize}px`,
+        fontWeight: 'bold',
+        borderWidth: '2px',
+        borderStyle: 'solid',
+        background: 'radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, rgba(26, 14, 42, 0.4) 80%)',
+        borderRadius: '8px',
+        color: 'var(--brand-quaternary)',
+    };
+    const specialSymbolStyle: React.CSSProperties = {
+        textShadow: '0 0 8px var(--brand-accent-secondary), 0 0 16px var(--brand-accent-secondary-glow)',
+    };
+
+    const faces = [
+      { transform: `rotateY(0deg) translateZ(${translateZ}px)`, content: letter },
+      { transform: `rotateY(180deg) translateZ(${translateZ}px)`, content: '✧' },
+      { transform: `rotateX(90deg) translateZ(${translateZ}px)`, content: '✦' },
+      { transform: `rotateX(-90deg) translateZ(${translateZ}px)`, content: '⊹' },
+      { transform: `rotateY(-90deg) translateZ(${translateZ}px)`, content: '※' },
+      { transform: `rotateY(90deg) translateZ(${translateZ}px)`, content: '✢' },
+    ];
+
+    return (
+        <div className="relative" style={{width: `${size}px`, height: `${size}px`, transformStyle: 'preserve-3d'}}>
+            <div className="relative w-full h-full" style={{ transformStyle: 'preserve-3d', animation: `self-rotate ${speed}s linear infinite` }}>
+              {faces.map((face, index) => (
+                <div key={index} className="animate-holographic-border-pulse" style={{...specialFaceStyle, transform: face.transform }}>
+                  <span style={specialSymbolStyle}>{face.content}</span>
+                </div>
+              ))}
+            </div>
+        </div>
+    );
+  }
+
+
   const contentSize = Math.floor(size * 0.65);
 
   const faces = [
@@ -23,7 +96,7 @@ const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDe
     { name: 'bottom', transform: `rotateX(-90deg) translateZ(${translateZ}px)` },
   ];
 
-  const faceClasses = faceClassName || 'bg-black/20 backdrop-blur-sm border border-brand-accent-secondary/40';
+  const faceClasses = faceClassName || 'face-theme-dynamic';
 
   const content = icon ? (
     <div
@@ -31,17 +104,15 @@ const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDe
       style={{
         width: `${contentSize}px`,
         height: `${contentSize}px`,
-        filter: 'drop-shadow(0 0 8px var(--brand-accent))',
       }}
     >
       {icon}
     </div>
   ) : (
     <span
-      className={`font-extrabold text-brand-light ${!disableContentAnimation ? 'animate-letter-intro-float-hue' : ''}`}
+      className={`font-bold ${!disableContentAnimation ? 'animate-appear' : ''}`}
       style={{
         fontSize: `${contentSize}px`,
-        textShadow: '0 0 8px var(--brand-accent), 0 0 16px var(--brand-accent)',
         animationDelay: !disableContentAnimation ? animationDelay : undefined,
       }}
     >
@@ -58,20 +129,33 @@ const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDe
         transformStyle: 'preserve-3d',
       }}
     >
-      {faces.map((face, index) => (
-        <div
-          key={index}
-          className={`absolute flex items-center justify-center rounded-lg shadow-inner-strong ${faceClasses}`}
+      {/* This new inner div handles the individual rotation of each cube */}
+      <div
+          className={`relative w-full h-full ${randomValues.selfRotationClass}`}
           style={{
-            width: `${size}px`,
-            height: `${size}px`,
-            transform: face.transform,
-            backfaceVisibility: 'hidden',
+              transformStyle: 'preserve-3d',
+              animationDuration: `${randomValues.selfRotationDuration}s`,
           }}
-        >
-          {!noContent && content}
-        </div>
-      ))}
+      >
+        {faces.map((face, index) => (
+          <div
+            key={index}
+            className={`absolute flex items-center justify-center rounded-lg ${faceClasses}`}
+            style={{
+              width: `${size}px`,
+              height: `${size}px`,
+              transform: face.transform,
+              backfaceVisibility: 'hidden',
+              boxShadow: 'inset 0 0 5px rgba(0,0,0,0.1)',
+              // Apply randomized styles
+              opacity: randomValues.opacity,
+              borderWidth: `${randomValues.borderWidth}px`,
+            }}
+          >
+            {!noContent && content}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

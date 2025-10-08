@@ -17,7 +17,6 @@ interface LanguageContextType {
   setMusicVolume: (volume: number) => void;
   isDeviceTablet: boolean;
   isTabletMode: boolean;
-  setIsTabletMode: (isTablet: boolean) => void;
   t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
 }
 
@@ -35,8 +34,9 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   const theme: Theme = 'dark';
   const [sfxVolume, setSfxVolumeState] = useState<number>(0.5);
   const [musicVolume, setMusicVolumeState] = useState<number>(0.2);
-  const [isTabletMode, setIsTabletModeState] = useState<boolean>(true);
   const isDeviceTablet = useTabletDetection();
+  // Tablet mode is now automatic based on device detection, the setting has been removed.
+  const isTabletMode = isDeviceTablet;
 
 
   // Effect for initializing language, theme, and volumes from localStorage or browser defaults
@@ -93,13 +93,8 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     localStorage.setItem('lumina-music-volume', String(newVolume));
   }, []);
 
-  const setIsTabletMode = useCallback((isTablet: boolean) => {
-    setIsTabletModeState(isTablet);
-    localStorage.setItem('lumina-tablet-mode', String(isTablet));
-  }, []);
-
   return (
-    <LanguageContext.Provider value={{ uiLanguage, setUiLanguage, gameplayLanguage, setGameplayLanguage, theme, sfxVolume, setSfxVolume, musicVolume, setMusicVolume, isDeviceTablet, isTabletMode, setIsTabletMode, t }}>
+    <LanguageContext.Provider value={{ uiLanguage, setUiLanguage, gameplayLanguage, setGameplayLanguage, theme, sfxVolume, setSfxVolume, musicVolume, setMusicVolume, isDeviceTablet, isTabletMode, t }}>
       {children}
     </LanguageContext.Provider>
   );

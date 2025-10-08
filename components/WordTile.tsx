@@ -4,7 +4,7 @@ import { useLanguage } from './LanguageContext';
 interface WordTileProps {
   word: string;
   onClick: (word: string) => void;
-  status: 'default' | 'found' | 'incorrect' | 'missed' | 'distractor';
+  status: 'default' | 'found' | 'incorrect' | 'missed' | 'distractor' | 'selected';
   style: React.CSSProperties;
 }
 
@@ -20,15 +20,16 @@ const WordTile: React.FC<WordTileProps> = ({ word, onClick, status, style }) => 
 
   const statusStyles = {
     default: `${defaultBgClasses} border-brand-accent-secondary/50 hover:border-brand-accent-secondary`,
-    found: 'bg-brand-accent-secondary/50 border-brand-accent-secondary cursor-default',
-    incorrect: 'bg-brand-accent/50 border-brand-accent animate-shake-horizontal',
-    missed: 'bg-brand-warning/40 border-brand-warning cursor-default animate-missed-word-glow z-10',
-    distractor: 'opacity-40 cursor-default',
+    selected: 'bg-brand-accent/20 border-brand-accent scale-105 shadow-lg',
+    found: 'bg-brand-correct/80 border-brand-correct text-white shadow-[0_0_10px_var(--brand-correct)] cursor-default',
+    incorrect: 'bg-brand-accent/80 border-brand-accent text-white shadow-[0_0_10px_var(--brand-accent)] animate-shake-horizontal',
+    missed: 'bg-brand-warning/60 border-brand-warning text-white cursor-default animate-missed-word-glow z-10',
+    distractor: 'opacity-20 cursor-default',
   };
 
   return (
     <div
-      onClick={() => status === 'default' && onClick(word)}
+      onClick={() => (status === 'default' || status === 'selected') && onClick(word)}
       className={`${baseClasses} ${statusStyles[status]}`}
       style={style}
       role="button"
