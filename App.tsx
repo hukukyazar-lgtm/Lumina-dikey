@@ -20,9 +20,10 @@ import { useThemeManager } from './hooks/useThemeManager';
 import { fetchWordChallenge } from './services/geminiService';
 import { saveLocalHighScore } from './services/scoreService';
 import { soundService } from './services/soundService';
-import { saveGuestProgress, loadGuestProgress, clearGuestProgress, saveEndlessHighScore, loadEndlessHighScore, saveEndlessProgress, loadEndlessProgress, clearEndlessProgress, saveTotalMoney, loadTotalMoney, loadPlayerProfile, savePlayerProfile, loadPlayerInventory, savePlayerInventory, saveCustomPlanetImages, loadCustomPlanetImages, saveCustomGameBackground, loadCustomGameBackground, saveCustomButtonTexture, loadCustomButtonTexture, saveCustomMenuBackground, loadCustomMenuBackground, loadCustomButtonStructure, saveCustomCubeStyle, loadCustomCubeStyle } from './services/progressService';
+import { saveGuestProgress, loadGuestProgress, clearGuestProgress, saveEndlessHighScore, loadEndlessHighScore, saveEndlessProgress, loadEndlessProgress, clearEndlessProgress, saveTotalMoney, loadTotalMoney, loadPlayerProfile, savePlayerProfile, loadPlayerInventory, savePlayerInventory, saveCustomPlanetImages, loadCustomPlanetImages, saveCustomGameBackground, loadCustomGameBackground, saveCustomButtonTexture, loadCustomButtonTexture, saveCustomMenuBackground, loadCustomMenuBackground, loadCustomButtonStructure, saveCustomCubeStyle, loadCustomCubeStyle, saveCustomCubeTexture, loadCustomCubeTexture } from './services/progressService';
 import type { GameStatus, WordChallenge, Difficulty, LevelProgress, GameMode, WordLength, SavedProgress, SavedEndlessState, PlayerProfile, AchievementConditionState, PlayerInventory } from './types';
 import { difficultySettings, LIFE_BONUS_INTERVAL, STARTING_LIVES, MEMORY_GAME_INTERVAL, MAX_LIVES, difficultyProgression, difficultyPoints, ENDLESS_TIMER, difficultyAnimations, planetImageUrls, ADVENTURE_GATEWAYS_PER_PLANET, planetBackgroundSizes, achievements, shopItems, cubeColorPalettes, cubeStyles } from './config';
+// FIX: Import the 'themes' object to apply cosmetic theme styles to game elements.
 import { themes } from './themes';
 
 
@@ -89,12 +90,14 @@ export default function App() {
   const [currentAnimationClass, setCurrentAnimationClass] = useState<string | null>(null);
   const [currentAnimationDuration, setCurrentAnimationDuration] = useState<number | null>(null);
   const [endlessCheckpoint, setEndlessCheckpoint] = useState<SavedEndlessState | null>(null);
+  const [endlessStartingDifficulty, setEndlessStartingDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
 
   // State for custom images
   const [customPlanetImages, setCustomPlanetImages] = useState<Record<number, string>>(loadCustomPlanetImages());
   const [customMenuBackgroundUrl, setCustomMenuBackgroundUrl] = useState<string | null>(loadCustomMenuBackground());
   const [customGameBackgroundUrl, setCustomGameBackgroundUrl] = useState<string | null>(loadCustomGameBackground());
   const [customButtonTextureUrl, setCustomButtonTextureUrl] = useState<string | null>(loadCustomButtonTexture());
+  const [customCubeTextureUrl, setCustomCubeTextureUrl] = useState<string | null>(loadCustomCubeTexture());
   const [activeCubeStyle, setActiveCubeStyle] = useState<string>(loadCustomCubeStyle() || 'default');
 
   const usedWords = useRef<Set<string>>(new Set());
@@ -216,18 +219,20 @@ export default function App() {
                 setConsecutiveCorrectAnswers(0);
             }
         } else if (gameMode === 'endless') {
-             setRoundCount(r => r + 1);
+            const coinsPerWord = endlessStartingDifficulty === 'hard' ? 3 : endlessStartingDifficulty === 'medium' ? 2 : 1;
+            setRoundCount(r => r + 1);
 
             // Always record the data for the memory game, regardless of outcome.
             if (wordChallenge) {
-                setMemoryGameWordData(prev => [...prev, { word: wordChallenge.correctWord, score: 1 }]);
+                // The 'score' property is used as the coin value in the memory game
+                setMemoryGameWordData(prev => [...prev, { word: wordChallenge.correctWord, score: coinsPerWord }]);
             }
             setMemoryGameAllChoices(prev => shuffleArray([...new Set([...prev, ...choices])]));
              
              if (isCorrect) {
                 soundService.play('correct');
                 setGameStatus('correct');
-                updateGameMoney(m => m + 1);
+                updateGameMoney(m => m + coinsPerWord);
                 setEndlessWordCount(c => c + 1);
                 usedWords.current.add(word);
             } else {
@@ -259,7 +264,7 @@ export default function App() {
                 setConsecutiveCorrectAnswers(0);
             }
         }
-    }, [gameStatus, stopTimer, wordChallenge, gameMode, difficulty, lives, consecutiveCorrectAnswers, choices, updateGameMoney, updatePlayerProfile, playerInventory]);
+    }, [gameStatus, stopTimer, wordChallenge, gameMode, difficulty, lives, consecutiveCorrectAnswers, choices, updateGameMoney, updatePlayerProfile, playerInventory, endlessStartingDifficulty]);
 
     useEffect(() => {
         if ((gameStatus === 'playing' || gameStatus === 'duelPlaying') && !isPaused) {
@@ -295,7 +300,7 @@ export default function App() {
     }
   }, [gameStatus]);
 
-    const handleSelectMode = useCallback((mode: Difficulty | 'progressive' | 'duel' | 'endless') => {
+    const handleSelectMode = useCallback((mode: Difficulty | 'progressive' | 'duel' | 'endless', startingDifficulty?: 'easy' | 'medium' | 'hard') => {
         // Reset animations for the new game session
         setCurrentAnimationClass(null);
         setCurrentAnimationDuration(null);
@@ -327,27 +332,27 @@ export default function App() {
 
         if (mode === 'endless') {
             setGameMode('endless');
-            setDifficulty('Novice');
-            const savedState = loadEndlessProgress();
-            if (savedState) {
-                // Money is already loaded globally, just load game state
-                setEndlessWordCount(savedState.endlessWordCount);
-                setRoundCount(savedState.roundCount);
-                setMemoryGameWordData(savedState.memoryGameWordData);
-                setMemoryGameAllChoices(savedState.memoryGameAllChoices);
-                setEndlessCheckpoint(savedState);
-                savedState.usedWords.forEach(w => usedWords.current.add(w));
-                isFirstQuestionOfSession.current = false; // Continuing, so no countdown.
-            } else {
-                // Money is preserved, just reset game state
-                setEndlessWordCount(0);
-                setRoundCount(0);
-                setMemoryGameWordData([]);
-                setMemoryGameAllChoices([]);
-                setEndlessCheckpoint(null);
-                usedWords.current.clear();
-                isFirstQuestionOfSession.current = true; // A new game.
+            setDifficulty('Novice'); // Base difficulty, will be overridden by word count
+            
+            setEndlessStartingDifficulty(startingDifficulty || 'easy');
+            
+            // Reset game state for a new run based on selected difficulty
+            let initialWordCount = 0;
+            if (startingDifficulty === 'medium') {
+                initialWordCount = 15; // Corresponds to 'Skilled'
+            } else if (startingDifficulty === 'hard') {
+                initialWordCount = 30; // Corresponds to 'Master'
             }
+    
+            setEndlessWordCount(initialWordCount);
+            setRoundCount(initialWordCount); // Sync round count for memory game logic
+            setMemoryGameWordData([]);
+            setMemoryGameAllChoices([]);
+            setEndlessCheckpoint(null); // No checkpoints when starting fresh
+            usedWords.current.clear();
+            isFirstQuestionOfSession.current = true; // A new game.
+            clearEndlessProgress(); // Clear any previously saved run
+
         } else if (mode === 'progressive') {
             clearGuestProgress();
             const extraLives = playerInventory.consumables['extra-life'] || 0;
@@ -425,6 +430,11 @@ export default function App() {
     saveCustomButtonTexture(imageUrl);
   }, []);
 
+  const handleSetCustomCubeTexture = useCallback((imageUrl: string) => {
+    setCustomCubeTextureUrl(imageUrl);
+    saveCustomCubeTexture(imageUrl);
+  }, []);
+
   const handleSetCustomCubeStyle = useCallback((styleId: string) => {
     setActiveCubeStyle(styleId);
     saveCustomCubeStyle(styleId);
@@ -485,6 +495,9 @@ export default function App() {
                 if (savedEndless) {
                     setEndlessCheckpoint(savedEndless);
                     setRoundCount(savedEndless.roundCount);
+                    if (savedEndless.startingDifficulty) {
+                        setEndlessStartingDifficulty(savedEndless.startingDifficulty);
+                    }
                 }
                 
                 setGameStatus('map');
@@ -678,7 +691,8 @@ export default function App() {
                 roundCount: roundCount,
                 memoryGameWordData: [], // This data is for the next round, so start fresh
                 memoryGameAllChoices: [],
-                usedWords: Array.from(usedWords.current)
+                usedWords: Array.from(usedWords.current),
+                startingDifficulty: endlessStartingDifficulty,
             };
             saveEndlessProgress(progressToSave);
             setEndlessCheckpoint(progressToSave);
@@ -699,7 +713,7 @@ export default function App() {
                  setGameStatus('advancing');
             }
         }
-    }, [endlessWordCount, gameMode, gameMoney, roundCount, usedWords, updateGameMoney, endlessHighScore, level]);
+    }, [endlessWordCount, gameMode, gameMoney, roundCount, usedWords, updateGameMoney, endlessHighScore, endlessStartingDifficulty]);
 
     const handleMemoryGameFailure = useCallback(() => {
         if (gameMode === 'progressive') {
@@ -717,7 +731,6 @@ export default function App() {
             return;
         }
 
-        // Endless mode logic: Every gateway failure sends you back to the previous successful one.
         if (gameMode === 'endless') {
             soundService.play('lifeLost');
             if (endlessCheckpoint) {
@@ -726,10 +739,19 @@ export default function App() {
                 setEndlessWordCount(endlessCheckpoint.endlessWordCount);
                 setRoundCount(endlessCheckpoint.roundCount);
                 usedWords.current = new Set(endlessCheckpoint.usedWords);
+                if (endlessCheckpoint.startingDifficulty) {
+                    setEndlessStartingDifficulty(endlessCheckpoint.startingDifficulty);
+                }
             } else {
-                // Failed the very first gateway, so reset progress but PRESERVE money.
-                setEndlessWordCount(0);
-                setRoundCount(0);
+                // Failed the very first gateway, reset to starting difficulty
+                let initialWordCount = 0;
+                if (endlessStartingDifficulty === 'medium') {
+                    initialWordCount = 15;
+                } else if (endlessStartingDifficulty === 'hard') {
+                    initialWordCount = 30;
+                }
+                setEndlessWordCount(initialWordCount);
+                setRoundCount(initialWordCount);
                 usedWords.current.clear();
                 clearEndlessProgress(); // Clear saved progress as well, but money is safe.
             }
@@ -738,7 +760,7 @@ export default function App() {
             setMemoryGameAllChoices([]);
             setGameStatus('advancing');
         }
-    }, [endlessCheckpoint, gameMode, playerProfile.name, score, level, updateGameMoney]);
+    }, [endlessCheckpoint, gameMode, playerProfile.name, score, level, updateGameMoney, endlessStartingDifficulty]);
 
     // --- Achievement Unlocking Logic ---
     const checkAndUnlockAchievements = useCallback(() => {
@@ -810,6 +832,7 @@ export default function App() {
                 onSetPlayerAvatar={handleSetPlayerAvatar}
                 onSetGameBackground={handleSetGameBackground}
                 onSetCustomButtonTexture={handleSetCustomButtonTexture}
+                onSetCustomCubeTexture={handleSetCustomCubeTexture}
                 onSetCustomCubeStyle={handleSetCustomCubeStyle}
                 activeCubeStyle={activeCubeStyle}
             />;
@@ -819,6 +842,7 @@ export default function App() {
                     gameStatus={gameStatus}
                     gameMode={gameMode}
                     onReturnToMenu={handleReturnToMenu}
+                    onOpenLeaderboard={handleOpenProfile}
                     difficulty={difficulty}
                     gameMoney={gameMoney}
                     trophyCount={trophyCount}
@@ -868,6 +892,7 @@ export default function App() {
                     activeTheme={playerInventory.activeTheme}
                     customGameBackgroundUrl={customGameBackgroundUrl}
                     customButtonTextureUrl={customButtonTextureUrl}
+                    customCubeTextureUrl={customCubeTextureUrl}
                 />
             );
         case 'gameOver':

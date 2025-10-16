@@ -22,7 +22,7 @@ const ChoiceButton = forwardRef<HTMLButtonElement, ChoiceButtonProps>(({ word, o
   const fontSizeClass = getFontSizeClass(word.length);
 
   const baseClasses = `
-    w-full text-center font-sans p-3 sm:p-4
+    w-full text-center font-sans font-black p-3 sm:p-4
     transform transition-all duration-200 ease-in-out
     border
     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-bg focus:ring-brand-warning
@@ -48,8 +48,6 @@ const ChoiceButton = forwardRef<HTMLButtonElement, ChoiceButtonProps>(({ word, o
     },
   };
 
-  const currentStatus = statusStyles[status];
-
   // In default state, we apply the custom structure. In correct/incorrect states, we use the theme's feedback styles.
   const buttonStyle: React.CSSProperties = status === 'default'
     ? {
@@ -72,19 +70,20 @@ const ChoiceButton = forwardRef<HTMLButtonElement, ChoiceButtonProps>(({ word, o
       buttonStyle.backgroundPosition = 'center';
       buttonStyle.color = 'var(--brand-light)'; // Ensure high contrast
       textWrapperClass = 'drop-shadow-[0_2px_2px_rgba(0,0,0,0.7)]';
+// FIX: Use statusStyles[status] directly to allow TypeScript to correctly narrow the type.
   } else if (status !== 'default') {
-      effectiveTextClass = currentStatus.text;
+      effectiveTextClass = statusStyles[status].text;
   }
   
   const combinedClasses = `
     ${baseClasses}
     ${fontSizeClass}
-    ${status !== 'default' ? currentStatus.bg : ''}
-    ${status !== 'default' ? currentStatus.border : ''}
-    ${status !== 'default' ? currentStatus.shadow : ''}
+    ${status !== 'default' ? statusStyles[status].bg : ''}
+    ${status !== 'default' ? statusStyles[status].border : ''}
+    ${status !== 'default' ? statusStyles[status].shadow : ''}
     ${effectiveTextClass}
     ${status === 'default' ? 'hover:brightness-110 active:translate-y-0.5' : ''}
-    ${currentStatus.animation}
+    ${statusStyles[status].animation}
   `;
 
   const disabledClasses = 'disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none';

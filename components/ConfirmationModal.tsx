@@ -32,13 +32,13 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   return (
     <div className="fixed inset-0 bg-brand-bg/90 backdrop-blur-md z-50 flex flex-col items-center justify-center animate-appear p-4" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-description">
         <div className={`w-full max-w-md text-center p-6 sm:p-8 bg-brand-primary backdrop-blur-sm border-2 border-brand-warning/80 rounded-2xl shadow-2xl shadow-brand-warning/20`}>
-            <h2 id="dialog-title" className="text-3xl sm:text-4xl font-extrabold text-brand-warning mb-4">{title}</h2>
+            <h2 id="dialog-title" className="text-3xl sm:text-4xl font-black text-brand-warning mb-4">{title}</h2>
             <p id="dialog-description" className="text-brand-light/90 text-base sm:text-lg mb-8">{message}</p>
             <div className="flex justify-center gap-4">
                 <button
                     onClick={onCancel}
                     className="
-                        w-full text-center text-lg sm:text-xl font-extrabold p-3 rounded-full
+                        w-full text-center text-lg sm:text-xl font-black p-3 rounded-full
                         transform transition-all duration-150 ease-in-out
                         backdrop-blur-sm shadow-bevel-inner border focus:outline-none text-brand-light
                         bg-brand-secondary border-brand-light/20 shadow-[0_4px_0_var(--bevel-shadow-dark)]
@@ -51,7 +51,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 <button
                     onClick={onConfirm}
                     className="
-                        w-full text-center text-lg sm:text-xl font-extrabold p-3 rounded-full
+                        w-full text-center text-lg sm:text-xl font-black p-3 rounded-full
                         transform transition-all duration-150 ease-in-out
                         backdrop-blur-sm shadow-bevel-inner border focus:outline-none text-brand-light
                         bg-brand-accent/50 border-brand-accent/80 shadow-[0_4px_0_var(--brand-accent-shadow)]

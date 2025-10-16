@@ -30,7 +30,7 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ score }) => {
   return (
     <div className={`h-10 flex items-center justify-center ${panelClasses} backdrop-blur-sm border px-4 sm:px-6 shadow-bevel-inner rounded-lg`}>
       {/* Score */}
-      <span className={`text-lg sm:text-xl font-bold text-brand-accent-secondary w-16 sm:w-20 text-center transition-transform ${isAnimating ? 'animate-score-pop' : ''}`}>
+      <span className={`text-lg sm:text-xl font-black text-brand-accent-secondary w-16 sm:w-20 text-center transition-transform ${isAnimating ? 'animate-score-pop' : ''}`}>
         {score}
       </span>
     </div>

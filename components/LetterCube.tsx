@@ -1,5 +1,3 @@
-
-
 import React, { useMemo } from 'react';
 
 interface LetterCubeProps {
@@ -13,9 +11,12 @@ interface LetterCubeProps {
   activeTheme?: string; // Prop name clarified
   isSpecialCube?: boolean;
   speed?: number;
+  customTextureUrl?: string | null;
+  isCorrect?: boolean;
+  isIncorrect?: boolean;
 }
 
-const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDelay, faceClassName, noContent, disableContentAnimation = false, activeTheme = 'default', isSpecialCube, speed }) => {
+const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDelay, faceClassName, noContent, disableContentAnimation = false, activeTheme = 'default', isSpecialCube, speed, customTextureUrl, isCorrect, isIncorrect }) => {
   const translateZ = size / 2;
 
   // Generate random visual properties once per cube instance.
@@ -96,7 +97,8 @@ const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDe
     { name: 'bottom', transform: `rotateX(-90deg) translateZ(${translateZ}px)` },
   ];
 
-  const faceClasses = faceClassName || 'face-theme-dynamic';
+  const baseFaceClasses = faceClassName || 'face-theme-dynamic';
+  const feedbackClass = isCorrect ? 'face-correct' : (isIncorrect ? 'face-incorrect' : '');
 
   const content = icon ? (
     <div
@@ -110,15 +112,19 @@ const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDe
     </div>
   ) : (
     <span
-      className={`font-bold ${!disableContentAnimation ? 'animate-appear' : ''}`}
+      className={`font-black ${!disableContentAnimation ? 'animate-appear' : ''}`}
       style={{
         fontSize: `${contentSize}px`,
         animationDelay: !disableContentAnimation ? animationDelay : undefined,
+        color: customTextureUrl ? 'var(--brand-light)' : undefined,
+        textShadow: customTextureUrl ? '0 0 8px rgba(0,0,0,0.8)' : undefined,
       }}
     >
       {letter}
     </span>
   );
+
+  const selfRotationClass = (isCorrect || isIncorrect) ? 'animate-none' : randomValues.selfRotationClass;
 
   return (
     <div
@@ -131,30 +137,39 @@ const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDe
     >
       {/* This new inner div handles the individual rotation of each cube */}
       <div
-          className={`relative w-full h-full ${randomValues.selfRotationClass}`}
+          className={`relative w-full h-full ${selfRotationClass}`}
           style={{
               transformStyle: 'preserve-3d',
               animationDuration: `${randomValues.selfRotationDuration}s`,
           }}
       >
-        {faces.map((face, index) => (
-          <div
-            key={index}
-            className={`absolute flex items-center justify-center rounded-lg ${faceClasses}`}
-            style={{
+        {faces.map((face, index) => {
+            const faceStyle: React.CSSProperties = {
               width: `${size}px`,
               height: `${size}px`,
               transform: face.transform,
               backfaceVisibility: 'hidden',
               boxShadow: 'inset 0 0 5px rgba(0,0,0,0.1)',
-              // Apply randomized styles
-              opacity: randomValues.opacity,
+              opacity: (isCorrect || isIncorrect) ? 1 : randomValues.opacity,
               borderWidth: `${randomValues.borderWidth}px`,
-            }}
-          >
-            {!noContent && content}
-          </div>
-        ))}
+            };
+
+            if (customTextureUrl) {
+                faceStyle.backgroundImage = `linear-gradient(rgba(26, 14, 42, 0.6), rgba(26, 14, 42, 0.6)), url(${customTextureUrl})`;
+                faceStyle.backgroundSize = 'cover';
+                faceStyle.backgroundPosition = 'center';
+            }
+
+            return (
+              <div
+                key={index}
+                className={`absolute flex items-center justify-center rounded-lg ${baseFaceClasses} ${feedbackClass}`}
+                style={faceStyle}
+              >
+                {!noContent && content}
+              </div>
+            );
+        })}
       </div>
     </div>
   );

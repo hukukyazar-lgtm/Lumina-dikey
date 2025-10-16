@@ -4,7 +4,7 @@ import { useLanguage } from './LanguageContext';
 import type { JourneyItem } from '../types';
 
 interface EndlessJourneyBarProps {
-  onStartEndless: () => void;
+  onNodeClick: (node: JourneyItem) => void;
   scrollContainerRef: React.RefObject<HTMLElement>;
   currentProgressIndex: number;
   journeyItems: JourneyItem[];
@@ -44,13 +44,14 @@ const JourneyNode: React.FC<{
 
   if (isFirstPlanet) {
     const planetSize = 512;
-    const buttonStyle: React.CSSProperties = {
+// FIX: Cast the style object to React.CSSProperties to allow for custom CSS properties.
+    const buttonStyle = {
         backgroundImage: `url(${imageUrl})`,
         backgroundSize: '200% auto', // Sized for horizontal panning
         backgroundPosition: 'center',
         // The glow color is dynamically set from the planet's data
         '--glow-color': color,
-    };
+    } as React.CSSProperties;
 
     return (
       <div style={{...style, width: `${planetSize}px`, height: `${planetSize}px` }} className="absolute">
@@ -136,7 +137,7 @@ const JourneyNode: React.FC<{
 
 // --- END CHILD COMPONENTS ---
 
-const EndlessJourneyBar: React.FC<EndlessJourneyBarProps> = ({ onStartEndless, scrollContainerRef, currentProgressIndex, journeyItems }) => {
+const EndlessJourneyBar: React.FC<EndlessJourneyBarProps> = ({ onNodeClick, scrollContainerRef, currentProgressIndex, journeyItems }) => {
     const { t } = useLanguage();
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
@@ -294,7 +295,7 @@ const EndlessJourneyBar: React.FC<EndlessJourneyBarProps> = ({ onStartEndless, s
                     <JourneyNode
                         key={item.id}
                         type={item.type}
-                        onClick={onStartEndless}
+                        onClick={() => onNodeClick(item)}
                         color={item.color}
                         className="animate-appear"
                         name={item.nameKey ? t(item.nameKey as any) : undefined}

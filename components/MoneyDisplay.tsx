@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import GoldCoinIcon from './GoldCoinIcon';
 
 interface MoneyDisplayProps {
   money: number;
@@ -28,8 +29,8 @@ const MoneyDisplay: React.FC<MoneyDisplayProps> = ({ money }) => {
   return (
     <div className={`h-10 flex items-center justify-center ${panelClasses} backdrop-blur-sm border px-4 sm:px-6 shadow-bevel-inner rounded-lg`}>
       {/* Money */}
-      <span className={`text-lg sm:text-xl font-bold text-brand-warning transition-transform ${isAnimating ? 'animate-score-pop' : ''}`}>
-        <span className="inline-block mr-1">☄️</span>{money}
+      <span className={`text-lg sm:text-xl font-black text-brand-warning transition-transform flex items-center gap-1 ${isAnimating ? 'animate-score-pop' : ''}`}>
+        <GoldCoinIcon className="w-5 h-5" />{money}
       </span>
     </div>
   );

@@ -26,13 +26,13 @@ const PlayerInterface: React.FC<PlayerInterfaceProps> = ({ playerNumber, score, 
 
     const scoreElement = (
         <div className={`h-10 flex items-center justify-center bg-brand-primary backdrop-blur-sm border border-brand-light/10 px-4 shadow-bevel-inner rounded-full`} aria-label={scoreLabel}>
-            <span className={`text-lg sm:text-2xl font-bold ${scoreColor}`}>{score}</span>
+            <span className={`text-lg sm:text-2xl font-black ${scoreColor}`}>{score}</span>
         </div>
     );
     
     const progressTrackerElement = <DuelProgressTracker roundWinners={roundWinners} />;
     
-    const roundTitleElement = <h2 className="text-xl sm:text-2xl font-bold text-brand-light/80">{roundTitle}</h2>;
+    const roundTitleElement = <h2 className="text-xl sm:text-2xl font-black text-brand-light/80">{roundTitle}</h2>;
 
 
     return (
@@ -183,7 +183,7 @@ const DuelPage: React.FC<DuelPageProps> = ({
                 {duelSecondPlayerTimeLeft !== null && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-brand-bg/40 backdrop-blur-sm border-2 ${duelTurn === 1 ? 'border-brand-accent-secondary' : 'border-brand-accent'}`}>
-                            <span className={`text-2xl font-bold ${duelTurn === 1 ? 'text-brand-accent-secondary' : 'text-brand-accent'}`}>
+                            <span className={`text-2xl font-black ${duelTurn === 1 ? 'text-brand-accent-secondary' : 'text-brand-accent'}`}>
                                 {duelSecondPlayerTimeLeft}
                             </span>
                         </div>
@@ -192,12 +192,12 @@ const DuelPage: React.FC<DuelPageProps> = ({
 
                  {isPaused && (gameStatus === 'duelPlaying' || gameStatus === 'countdown') && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-brand-bg/90 backdrop-blur-md z-30 animate-appear">
-                        <h2 className="text-3xl font-extrabold text-brand-light mb-8 animate-pulse-slow">{t('paused')}</h2>
+                        <h2 className="text-3xl font-black text-brand-light mb-8 animate-pulse-slow">{t('paused')}</h2>
                         <div className="flex flex-col gap-4 w-full max-w-xs">
                             <button
                                 onClick={togglePause}
                                 aria-label={t('continue')}
-                                className="w-full text-center text-lg sm:text-xl font-extrabold p-3 rounded-full flex items-center justify-center gap-2 transform transition-all duration-150 ease-in-out backdrop-blur-sm shadow-bevel-inner border focus:outline-none text-brand-bg bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)] hover:bg-brand-accent-secondary hover:shadow-[0_6px_0_var(--brand-accent-secondary-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-secondary-shadow)]"
+                                className="w-full text-center text-lg sm:text-xl font-black p-3 rounded-full flex items-center justify-center gap-2 transform transition-all duration-150 ease-in-out backdrop-blur-sm shadow-bevel-inner border focus:outline-none text-brand-bg bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)] hover:bg-brand-accent-secondary hover:shadow-[0_6px_0_var(--brand-accent-secondary-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-secondary-shadow)]"
                             >
                                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M8 5v14l11-7z" />
@@ -206,7 +206,7 @@ const DuelPage: React.FC<DuelPageProps> = ({
                             </button>
                             <button
                                 onClick={onReturnToMenu}
-                                className="w-full text-center text-lg sm:text-xl font-extrabold p-3 rounded-full flex items-center justify-center gap-2 transform transition-all duration-150 ease-in-out backdrop-blur-sm shadow-bevel-inner border focus:outline-none text-brand-light bg-brand-warning/50 border-brand-warning/80 shadow-[0_4px_0_var(--brand-warning-shadow)] hover:bg-brand-warning/70 hover:shadow-[0_6px_0_var(--brand-warning-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-warning-shadow)]"
+                                className="w-full text-center text-lg sm:text-xl font-black p-3 rounded-full flex items-center justify-center gap-2 transform transition-all duration-150 ease-in-out backdrop-blur-sm shadow-bevel-inner border focus:outline-none text-brand-light bg-brand-warning/50 border-brand-warning/80 shadow-[0_4px_0_var(--brand-warning-shadow)] hover:bg-brand-warning/70 hover:shadow-[0_6px_0_var(--brand-warning-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-warning-shadow)]"
                             >
                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                                {t('menu')}
@@ -220,7 +220,7 @@ const DuelPage: React.FC<DuelPageProps> = ({
                         className="absolute left-10 sm:left-16 pointer-events-none z-20 animate-score-popup-up"
                         style={getPopupPositionAndRotation()}
                     >
-                        <span className={`text-5xl font-extrabold ${popup.player === 1 ? 'text-brand-accent-secondary' : 'text-brand-accent'}`}
+                        <span className={`text-5xl font-black ${popup.player === 1 ? 'text-brand-accent-secondary' : 'text-brand-accent'}`}
                               style={{filter: `drop-shadow(0 0 10px currentColor)`}}
                         >
                             {popup.text}

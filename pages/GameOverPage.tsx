@@ -3,6 +3,7 @@ import { useLanguage } from '../components/LanguageContext';
 import { soundService } from '../services/soundService';
 import LetterCube from '../components/LetterCube';
 import type { GameMode } from '../types';
+import GoldCoinIcon from '../components/GoldCoinIcon';
 
 interface GameOverPageProps {
     score: number;
@@ -77,7 +78,7 @@ const GameOverPage: React.FC<GameOverPageProps> = ({ score, level, missedWord, o
     return (
         <div className="fixed inset-0 bg-brand-bg/90 backdrop-blur-md z-50 flex flex-col items-center justify-center animate-appear p-4">
             <div className={`w-full max-w-md text-center p-8 bg-brand-primary backdrop-blur-sm border-2 ${isEndless ? 'border-brand-warning' : 'border-brand-accent'} rounded-2xl shadow-2xl ${isEndless ? 'shadow-brand-warning/20' : 'shadow-brand-accent/20'}`}>
-                <h2 className={`text-5xl sm:text-6xl font-extrabold mb-4 animate-shake-horizontal ${isEndless ? 'text-brand-warning' : 'text-brand-accent'}`}>
+                <h2 className={`text-5xl sm:text-6xl font-black mb-4 animate-shake-horizontal ${isEndless ? 'text-brand-warning' : 'text-brand-accent'}`}>
                     {isEndless ? t('runEnded') : t('gameOver')}
                 </h2>
                 
@@ -100,20 +101,20 @@ const GameOverPage: React.FC<GameOverPageProps> = ({ score, level, missedWord, o
                 <div className="flex justify-center items-baseline gap-6 mb-8">
                     {isEndless ? (
                         <div className="flex-1">
-                            <p className="text-lg sm:text-xl text-brand-light/80">{t('totalEarnings')}</p>
-                            <p className="text-4xl sm:text-5xl font-bold text-brand-warning">
-                                <span className="inline-block mr-2">☄️</span>{finalMoney}
+                            <p className="text-lg sm:text-xl font-black text-brand-light/80">{t('totalEarnings')}</p>
+                            <p className="text-4xl sm:text-5xl font-black text-brand-warning flex items-center justify-center gap-2">
+                                <GoldCoinIcon className="w-10 h-10" /><span>{finalMoney}</span>
                             </p>
                         </div>
                     ) : (
                         <>
                             <div className="flex-1">
-                                <p className="text-lg sm:text-xl text-brand-light/80">{t('finalScore')}</p>
-                                <p className="text-4xl sm:text-5xl font-bold text-brand-accent-secondary">{finalScore}</p>
+                                <p className="text-lg sm:text-xl font-black text-brand-light/80">{t('finalScore')}</p>
+                                <p className="text-4xl sm:text-5xl font-black text-brand-accent-secondary">{finalScore}</p>
                             </div>
                             <div className="flex-1">
-                                <p className="text-lg sm:text-xl text-brand-light/80">{t('level')}</p>
-                                <p className="text-4xl sm:text-5xl font-bold text-brand-accent-secondary">{level}</p>
+                                <p className="text-lg sm:text-xl font-black text-brand-light/80">{t('level')}</p>
+                                <p className="text-4xl sm:text-5xl font-black text-brand-accent-secondary">{level}</p>
                             </div>
                         </>
                     )}
@@ -121,7 +122,7 @@ const GameOverPage: React.FC<GameOverPageProps> = ({ score, level, missedWord, o
                 <button
                     onClick={handleReturnClick}
                     className={`
-                        w-full max-w-xs text-center text-xl sm:text-2xl font-extrabold p-4 rounded-full
+                        w-full max-w-xs text-center text-xl sm:text-2xl font-black p-4 rounded-full
                         transform transition-all duration-150 ease-in-out
                         backdrop-blur-sm shadow-bevel-inner border text-brand-light focus:outline-none
                         ${isEndless 

@@ -4,6 +4,7 @@ import { useLanguage } from './LanguageContext';
 import { soundService } from '../services/soundService';
 import { GameMode } from '../types';
 import { ADVENTURE_GATEWAYS_PER_PLANET, planetNameTranslationKeys } from '../config';
+import GoldCoinIcon from './GoldCoinIcon';
 
 interface MemoryGameProps {
   wordsToFind: Array<{ word: string; score: number }>;
@@ -87,20 +88,13 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ wordsToFind, allChoices, onClos
   useEffect(() => {
     if (!gameWon) return;
 
-    if (gameMode === 'endless' && endlessWordCount) {
+    // For both modes, a "Perfect" score doubles the bonus earned from the recalled words.
+    setTimeout(() => {
         soundService.play('bonus');
-        const perfectBonus = endlessWordCount * 2;
-        setBonusScore(perfectBonus); // This overwrites the per-word score, which is correct
+        setBonusScore(currentTotal => currentTotal * 2);
         setPointPopup({ text: t('perfectBonus'), key: Date.now() });
-    } else if (gameMode === 'progressive') {
-        // Progressive mode doubles the score earned within the bonus round
-        setTimeout(() => {
-            soundService.play('bonus');
-            setBonusScore(currentTotal => currentTotal * 2);
-            setPointPopup({ text: t('perfectBonus'), key: Date.now() });
-        }, 500);
-    }
-  }, [gameWon, gameMode, endlessWordCount, t]);
+    }, 500);
+  }, [gameWon, t]);
 
   const handleWordClick = (word: string) => {
     if (isClosing || gameWon || gameLost || foundWords.includes(word)) {
@@ -183,7 +177,7 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ wordsToFind, allChoices, onClos
   };
 
   const passButtonClasses = `
-    w-full max-w-xs text-center text-xl sm:text-2xl font-extrabold p-4 rounded-full
+    w-full max-w-xs text-center text-xl sm:text-2xl font-black p-4 rounded-full
     transform transition-all duration-150 ease-in-out
     backdrop-blur-sm shadow-bevel-inner border text-brand-light focus:outline-none`;
 
@@ -201,7 +195,7 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ wordsToFind, allChoices, onClos
     <div className="fixed inset-0 bg-brand-bg/90 backdrop-blur-md z-50 flex items-center justify-center animate-appear p-2 sm:p-4">
       <div className={`w-full max-w-5xl h-full max-h-[90vh] bg-brand-primary backdrop-blur-sm border-2 border-brand-accent rounded-2xl shadow-2xl shadow-brand-accent/20 p-2 sm:p-6 flex flex-col`}>
         <header className="text-center mb-2">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-brand-accent tracking-wider font-mono uppercase">{title}</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-brand-accent tracking-wider font-mono uppercase">{title}</h2>
           {isProgressive && (
             <p className="text-sm text-brand-light/70 mt-1">{t('memoryGatewayProgressiveDescription')}</p>
           )}
@@ -212,7 +206,7 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ wordsToFind, allChoices, onClos
                 className="absolute top-0 left-0 h-full bg-brand-accent-secondary transition-all"
                 style={{ width: `${timerProgress}%`, transitionDuration: '1s', transitionTimingFunction: 'linear' }}
             ></div>
-             <span className="absolute inset-0 flex items-center justify-center text-base sm:text-lg font-bold text-brand-light z-10">
+             <span className="absolute inset-0 flex items-center justify-center text-base sm:text-lg font-black text-brand-light z-10">
                 {timeLeft}{t('timeRemainingSuffix')}
             </span>
         </div>
@@ -232,7 +226,7 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ wordsToFind, allChoices, onClos
             
             {pointPopup && !gameLost && (
                 <div key={pointPopup.key} className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                    <span className="text-5xl font-extrabold text-brand-accent-secondary drop-shadow-[0_0_10px_var(--brand-accent-secondary)] animate-score-popup-up">
+                    <span className="text-5xl font-black text-brand-accent-secondary drop-shadow-[0_0_10px_var(--brand-accent-secondary)] animate-score-popup-up">
                         {pointPopup.text}
                     </span>
                 </div>
@@ -265,9 +259,8 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ wordsToFind, allChoices, onClos
                     ) : (
                         <>
                             {t('continue')}{' '}
-                            <span>
-                                ({bonusScore >= 0 ? '+' : ''}{bonusScore}
-                                <span style={{ marginLeft: '0.25rem' }} className="inline-block">☄️</span>)
+                            <span className="inline-flex items-center">
+                                ({bonusScore >= 0 ? '+' : ''}{bonusScore} <GoldCoinIcon className="inline-block w-5 h-5 ml-1" />)
                             </span>
                         </>
                     )}

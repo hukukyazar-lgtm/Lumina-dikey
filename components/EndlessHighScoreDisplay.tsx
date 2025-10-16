@@ -9,7 +9,7 @@ const EndlessHighScoreDisplay: React.FC<EndlessHighScoreDisplayProps> = ({ score
 
   return (
     <div className={`h-10 flex items-center justify-center ${panelClasses} backdrop-blur-sm border px-4 sm:px-6 shadow-bevel-inner rounded-lg animate-appear`} style={{animationDelay: '0.5s'}}>
-      <span className={`text-lg sm:text-xl font-bold text-brand-warning`}>
+      <span className={`text-lg sm:text-xl font-black text-brand-warning`}>
         ⭐{score}
       </span>
     </div>

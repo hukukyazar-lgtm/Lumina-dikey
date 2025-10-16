@@ -19,7 +19,8 @@ interface ParticleTimerOverlayProps {
 
 const ParticleTimerOverlay: React.FC<ParticleTimerOverlayProps> = ({ duration, timeLeft }) => {
   const [particles, setParticles] = useState<Particle[]>([]);
-  const animationFrameId = useRef<number>();
+// FIX: Initialize useRef with a value (null) and update the type accordingly.
+  const animationFrameId = useRef<number | null>(null);
   const lastSpawnTimeRef = useRef(0);
   const timeLeftRef = useRef(timeLeft);
 

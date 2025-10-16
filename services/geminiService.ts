@@ -1,5 +1,4 @@
-
-import { GoogleGenAI, Modality } from "@google/genai";
+import { GoogleGenAI, Modality, Type } from "@google/genai";
 import type { WordChallenge, WordLength, Language } from '../types';
 import { turkishWordList, englishWordList } from './wordList';
 
@@ -84,7 +83,6 @@ export const generateImageFromPrompt = async (prompt: string): Promise<string> =
             config: {
               numberOfImages: 1,
               outputMimeType: 'image/jpeg',
-              quality: 'HD', // Request a higher quality image
             },
         });
 
@@ -153,8 +151,8 @@ export const editImage = async (prompt: string, base64ImageData: string, mimeTyp
         for (const part of response.candidates[0].content.parts) {
             if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
                 const base64ImageBytes: string = part.inlineData.data;
-                // Assuming jpeg, as it's a common output. The API response might specify the exact type.
-                return `data:image/jpeg;base64,${base64ImageBytes}`;
+                const imageMimeType = part.inlineData.mimeType;
+                return `data:${imageMimeType};base64,${base64ImageBytes}`;
             }
         }
 
@@ -163,5 +161,81 @@ export const editImage = async (prompt: string, base64ImageData: string, mimeTyp
     } catch (error) {
         console.error("Error editing image with Gemini:", error);
         throw new Error("Image editing failed.");
+    }
+};
+
+// NEW function to generate a detailed prompt from a simple idea
+export const generateDetailedPrompt = async (
+    simpleIdea: string,
+    style: string,
+    mood: string,
+    language: Language
+): Promise<string> => {
+    try {
+        const metaPrompt = `You are a creative assistant and an expert prompt engineer for generative AI text-to-image models.
+Your task is to take a user's simple idea and expand it into a rich, detailed, and artistic prompt.
+The generated prompt should be a single, coherent paragraph.
+Do not use markdown or special formatting.
+The final prompt should be in ${language === 'tr' ? 'Turkish' : 'English'}.
+
+User's Idea: "${simpleIdea}"
+Art Style: ${style}
+Mood: ${mood}
+
+Generate the detailed prompt now.`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: metaPrompt,
+        });
+        return response.text;
+    } catch (error) {
+        console.error("Error generating detailed prompt with Gemini:", error);
+        throw new Error("Prompt generation failed.");
+    }
+};
+
+
+// NEW function to generate button structure from a text description
+export const generateButtonStructureFromPrompt = async (description: string): Promise<any> => {
+    try {
+        const metaPrompt = `You are a UI design assistant. Your task is to interpret a user's description of a button style and map it to a set of specific design parameters. The user's description is "${description}". Respond with a JSON object that strictly adheres to the provided schema.`;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: metaPrompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        borderRadius: {
+                            type: Type.INTEGER,
+                            description: 'Button corner roundness in pixels. 0 for sharp, 50 for fully rounded.',
+                        },
+                        shadowDepth: {
+                            type: Type.INTEGER,
+                            description: 'The perceived depth of the button shadow in pixels. 0 for flat, 10 for very deep.',
+                        },
+                        highlightIntensity: {
+                            type: Type.NUMBER,
+                            description: 'The intensity of the top-down light reflection. 0 for no highlight, 1 for a very strong highlight.',
+                        },
+                        surface: {
+                            type: Type.STRING,
+                            description: 'The surface material of the button. Must be one of: "matte", "glossy", or "metallic".',
+                        },
+                    },
+                    required: ["borderRadius", "shadowDepth", "highlightIntensity", "surface"],
+                },
+            },
+        });
+
+        const jsonStr = response.text.trim();
+        return JSON.parse(jsonStr);
+
+    } catch (error) {
+        console.error("Error generating button structure with Gemini:", error);
+        throw new Error("Button structure generation failed.");
     }
 };

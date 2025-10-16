@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Orbitron:wght@400..900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     :root {
       /* THIS BLOCK NOW SERVES AS THE DEFAULT 'Quantum Play' THEME */
@@ -53,7 +53,7 @@
       /* The background-image will be set by JavaScript */
       background-attachment: fixed;
       min-height: 100vh;
-      font-family: 'Nunito', sans-serif;
+      font-family: 'Orbitron', sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       color: var(--brand-light);
@@ -125,13 +125,28 @@
     }
     .face-theme-dynamic > span {
         font-family: var(--cube-font-family);
-        color: var(--cube-face-text-color) !important;
-        text-shadow: var(--cube-face-text-shadow) !important;
+        color: var(--cube-face-text-color);
+        text-shadow: var(--cube-face-text-shadow);
     }
     @keyframes holo-shift {
       to {
         background-position: -200% 0;
       }
+    }
+    /* NEW STYLE for correct answer feedback on cubes */
+    .face-correct {
+        border-color: var(--brand-correct) !important;
+        border-width: 3px !important;
+        opacity: 1 !important;
+        transition: border-color 0.3s ease-in-out, border-width 0.3s ease-in-out;
+    }
+
+    /* NEW STYLE for incorrect answer feedback on cubes */
+    .face-incorrect {
+        border-color: var(--brand-accent) !important;
+        border-width: 3px !important;
+        opacity: 1 !important;
+        transition: border-color 0.3s ease-in-out, border-width 0.3s ease-in-out;
     }
   </style>
   <script>
@@ -139,6 +154,7 @@
       theme: {
         extend: {
           fontFamily: {
+            'sans': ['Orbitron', 'sans-serif'],
             'orbitron': ['Orbitron', 'sans-serif'],
             'share-tech-mono': ['"Share Tech Mono"', 'monospace'],
           },
@@ -243,6 +259,7 @@
             'spin-layered': 'spin-layered 10s linear infinite',
             'fly-away': 'fly-away 0.5s ease-in forwards',
             'grow-and-fade': 'grow-and-fade 1.2s ease-out forwards',
+            'grow-and-fade-text': 'grow-and-fade-text 1.2s ease-out forwards',
             // Cube Self-Rotation Animations
             'self-rotate-x': 'self-rotate-x 10s linear infinite',
             'self-rotate-y': 'self-rotate-y 10s linear infinite',
@@ -595,6 +612,11 @@
               '0%': { opacity: '0', transform: 'scale(0.5)' },
               '50%': { opacity: '1', transform: 'scale(1.2)' },
               '100%': { opacity: '0', transform: 'scale(1.6)' },
+            },
+            'grow-and-fade-text': {
+              '0%': { opacity: '0', transform: 'scale(0.7)' },
+              '50%': { opacity: '1', transform: 'scale(1.1)' },
+              '100%': { opacity: '0', transform: 'scale(1.3)' },
             },
             // New Animations for Start Planet
             'rotate-bg': {

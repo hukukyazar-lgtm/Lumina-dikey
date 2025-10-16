@@ -356,14 +356,14 @@ export const achievements: Achievement[] = [
         id: 'money_500',
         titleKey: 'ach_money_500_title',
         descriptionKey: 'ach_money_500_desc',
-        icon: '☄️',
+        icon: 'gold_coin',
         condition: (state) => state.gameMoney >= 500,
     },
     {
         id: 'money_1000',
         titleKey: 'ach_money_1000_title',
         descriptionKey: 'ach_money_1000_desc',
-        icon: '💰',
+        icon: 'gold_coin_stack',
         condition: (state) => state.gameMoney >= 1000,
     },
 ];
@@ -424,6 +424,22 @@ export const shopItems: ShopItem[] = [
         category: 'cosmetics',
         icon: '🌊',
         price: 1500,
+    },
+    {
+        id: 'theme-crystal-palace',
+        nameKey: 'item_theme_crystal_palace_name',
+        descriptionKey: 'item_theme_crystal_palace_desc',
+        category: 'cosmetics',
+        icon: '💎',
+        price: 2000,
+    },
+    {
+        id: 'theme-quantum-foam',
+        nameKey: 'item_theme_quantum_foam_name',
+        descriptionKey: 'item_theme_quantum_foam_desc',
+        category: 'cosmetics',
+        icon: '🫧',
+        price: 2500,
     },
 ];
 

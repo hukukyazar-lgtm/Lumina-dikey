@@ -1,32 +1,33 @@
 import React from 'react';
+import { useLanguage } from './LanguageContext';
+import { GameStatus } from '../types';
 
-interface CorrectWordDisplayProps {
-  word: string;
-  isCorrect: boolean;
+interface FeedbackTextProps {
+  status: GameStatus;
 }
 
-const CorrectWordDisplay: React.FC<CorrectWordDisplayProps> = ({ word, isCorrect }) => {
+const FeedbackText: React.FC<FeedbackTextProps> = ({ status }) => {
+  const { t } = useLanguage();
+
+  if (status !== 'correct' && status !== 'incorrect') {
+    return null;
+  }
+
+  const isCorrect = status === 'correct';
+  const text = isCorrect ? t('feedbackCorrect') : t('feedbackIncorrect');
   const colorClass = isCorrect ? 'text-brand-correct' : 'text-brand-accent';
   const shadowClass = isCorrect ? 'drop-shadow-[0_0_15px_var(--brand-correct-glow)]' : 'drop-shadow-[0_0_15px_var(--brand-accent-glow)]';
 
-  // Dynamically adjust font size based on word length
-  const getFontSizeClass = (length: number) => {
-    if (length <= 5) return 'text-8xl';
-    if (length <= 6) return 'text-7xl';
-    if (length <= 7) return 'text-6xl';
-    return 'text-5xl';
-  };
-
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+    <div className="absolute inset-x-0 bottom-[25%] flex justify-center pointer-events-none z-20">
       <div
-        key={word} // Re-trigger animation on word change
-        className={`font-extrabold animate-grow-and-fade ${colorClass} ${shadowClass} ${getFontSizeClass(word.length)}`}
+        key={text} // Re-trigger animation on text change
+        className={`text-6xl font-black animate-grow-and-fade-text ${colorClass} ${shadowClass}`}
       >
-        {word}
+        {text}
       </div>
     </div>
   );
 };
 
-export default CorrectWordDisplay;
+export default FeedbackText;

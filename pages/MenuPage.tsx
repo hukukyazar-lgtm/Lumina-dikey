@@ -61,7 +61,7 @@ const MenuPage: React.FC<MenuPageProps> = ({ onSelect, onBack }) => {
     };
         
     const practiceButtonClasses = `
-        w-full text-center text-xl font-bold p-4 rounded-xl
+        w-full text-center text-xl font-black p-4 rounded-xl
         transform transition-all duration-150 ease-in-out
         backdrop-blur-sm shadow-bevel-inner border text-brand-light focus:outline-none
     `;
@@ -88,7 +88,7 @@ const MenuPage: React.FC<MenuPageProps> = ({ onSelect, onBack }) => {
                             `}
                         >
                             <div className="text-center">
-                                <h3 className="text-sm sm:text-base font-extrabold tracking-wider">{difficultyLabels[level]}</h3>
+                                <h3 className="text-sm sm:text-base font-black tracking-wider">{difficultyLabels[level]}</h3>
                                 <p className="text-xs font-normal text-brand-light/70 mt-1 px-1">
                                     {difficultyDescriptions[level]}
                                 </p>

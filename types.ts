@@ -54,6 +54,7 @@ export interface SavedEndlessState {
     memoryGameWordData: Array<{ word: string; score: number }>;
     memoryGameAllChoices: string[];
     usedWords: string[];
+    startingDifficulty?: 'easy' | 'medium' | 'hard';
 }
 
 export interface SavedProgress {

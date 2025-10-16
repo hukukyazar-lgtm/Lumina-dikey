@@ -48,41 +48,41 @@ const DuelRoundOverPage: React.FC<DuelRoundOverPageProps> = ({ roundNumber, roun
     return (
         <div className="fixed inset-0 bg-brand-bg/90 backdrop-blur-md z-50 flex flex-col items-center justify-center animate-appear p-4">
             <div className={`w-full max-w-lg text-center p-8 ${panelClasses} backdrop-blur-sm border-2 ${borderColor} rounded-2xl shadow-2xl ${shadowColor}`}>
-                <h3 className="text-2xl font-bold text-brand-light/70">{t('roundTitle', { round: roundNumber })}</h3>
-                <h2 className={`text-5xl sm:text-6xl font-extrabold ${titleColor} my-4 animate-correct-pop`}>
+                <h3 className="text-2xl font-black text-brand-light/70">{t('roundTitle', { round: roundNumber })}</h3>
+                <h2 className={`text-5xl sm:text-6xl font-black ${titleColor} my-4 animate-correct-pop`}>
                     {getTitle()}
                 </h2>
                 
                 <div className="text-lg text-brand-light/80 mb-2">{t('roundScore')}</div>
                 <div className="flex justify-around items-center mb-6 bg-brand-secondary/30 p-4 rounded-xl">
                     <div className="flex flex-col items-center">
-                        <span className="text-lg font-semibold text-brand-light/80">{t('player1')}</span>
-                        <span className="text-4xl font-bold text-brand-accent-secondary">{player1Score}</span>
+                        <span className="text-lg font-black text-brand-light/80">{t('player1')}</span>
+                        <span className="text-4xl font-black text-brand-accent-secondary">{player1Score}</span>
                     </div>
                     <div className="w-px h-16 bg-brand-light/20"></div>
                     <div className="flex flex-col items-center">
-                        <span className="text-lg font-semibold text-brand-light/80">{t('player2')}</span>
-                        <span className="text-4xl font-bold text-brand-accent">{player2Score}</span>
+                        <span className="text-lg font-black text-brand-light/80">{t('player2')}</span>
+                        <span className="text-4xl font-black text-brand-accent">{player2Score}</span>
                     </div>
                 </div>
 
                 <div className="text-lg text-brand-light/80 mb-2">{t('overallScore')}</div>
                  <div className="flex justify-around items-center mb-8 bg-brand-secondary/30 p-4 rounded-xl">
                     <div className="flex flex-col items-center">
-                        <span className="text-lg font-semibold text-brand-light/80">{t('player1')}</span>
-                        <span className="text-4xl font-bold text-brand-accent-secondary">{roundWinsCount.player1}</span>
+                        <span className="text-lg font-black text-brand-light/80">{t('player1')}</span>
+                        <span className="text-4xl font-black text-brand-accent-secondary">{roundWinsCount.player1}</span>
                     </div>
                     <div className="w-px h-16 bg-brand-light/20"></div>
                     <div className="flex flex-col items-center">
-                        <span className="text-lg font-semibold text-brand-light/80">{t('player2')}</span>
-                        <span className="text-4xl font-bold text-brand-accent">{roundWinsCount.player2}</span>
+                        <span className="text-lg font-black text-brand-light/80">{t('player2')}</span>
+                        <span className="text-4xl font-black text-brand-accent">{roundWinsCount.player2}</span>
                     </div>
                 </div>
 
                 <button
                     onClick={handleContinueClick}
                     className="
-                        w-full max-w-xs text-center text-xl sm:text-2xl font-extrabold p-4 rounded-full
+                        w-full max-w-xs text-center text-xl sm:text-2xl font-black p-4 rounded-full
                         transform transition-all duration-150 ease-in-out
                         backdrop-blur-sm shadow-bevel-inner border text-brand-bg focus:outline-none
                         bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)]

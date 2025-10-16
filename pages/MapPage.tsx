@@ -8,6 +8,76 @@ import LuminaCube from '../components/LuminaCube';
 import { soundService } from '../services/soundService';
 import { planetNameTranslationKeys, planetImageUrls, planetBackgroundSizes } from '../config';
 
+// --- START IN-PAGE MODAL COMPONENT ---
+type StartDifficulty = 'easy' | 'medium' | 'hard';
+
+interface StartGameModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onStart: (difficulty: StartDifficulty) => void;
+  planetName: string;
+}
+
+const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStart, planetName }) => {
+  const { t } = useLanguage();
+
+  if (!isOpen) {
+    return null;
+  }
+
+  const handleStart = (difficulty: StartDifficulty) => {
+    soundService.play('start');
+    onStart(difficulty);
+  };
+  
+  const handleClose = () => {
+    soundService.play('click');
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-brand-bg/90 backdrop-blur-md z-50 flex flex-col items-center justify-center animate-appear p-4" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+      <div className="w-full max-w-md text-center p-6 sm:p-8 bg-brand-primary backdrop-blur-sm border-2 border-brand-accent-secondary rounded-2xl shadow-2xl shadow-brand-accent-secondary/20">
+        <h2 id="dialog-title" className="text-3xl sm:text-4xl font-black text-brand-light mb-2">{planetName}</h2>
+        <p className="text-brand-light/80 mb-6">{t('endlessModeStartTitle')}</p>
+        
+        <div className="flex flex-col gap-4">
+          <button
+            onClick={() => handleStart('easy')}
+            className="group relative w-full text-center text-xl sm:text-2xl font-black p-4 rounded-lg transform transition-all duration-150 ease-in-out shadow-bevel-inner border focus:outline-none text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.7)] border-brand-correct shadow-[0_4px_0_var(--brand-correct-shadow)] hover:shadow-[0_6px_0_var(--brand-correct-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-correct-shadow)] overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-300 ease-in-out group-hover:scale-110" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://storage.googleapis.com/lumina-assets/easy-difficulty-bg.jpg')" }} />
+            <span className="relative z-10">{t('difficultyEasy')}</span>
+          </button>
+          <button
+            onClick={() => handleStart('medium')}
+            className="group relative w-full text-center text-xl sm:text-2xl font-black p-4 rounded-lg transform transition-all duration-150 ease-in-out shadow-bevel-inner border focus:outline-none text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.7)] border-brand-warning shadow-[0_4px_0_var(--brand-warning-shadow)] hover:shadow-[0_6px_0_var(--brand-warning-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-warning-shadow)] overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-300 ease-in-out group-hover:scale-110" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://storage.googleapis.com/lumina-assets/medium-difficulty-bg.jpg')" }} />
+            <span className="relative z-10">{t('difficultyMedium')}</span>
+          </button>
+          <button
+            onClick={() => handleStart('hard')}
+            className="group relative w-full text-center text-xl sm:text-2xl font-black p-4 rounded-lg transform transition-all duration-150 ease-in-out shadow-bevel-inner border focus:outline-none text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.7)] border-brand-accent shadow-[0_4px_0_var(--brand-accent-shadow)] hover:shadow-[0_6px_0_var(--brand-accent-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-shadow)] overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-300 ease-in-out group-hover:scale-110" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://storage.googleapis.com/lumina-assets/hard-difficulty-bg.jpg')" }} />
+            <span className="relative z-10">{t('difficultyHard')}</span>
+          </button>
+        </div>
+
+        <button 
+          onClick={handleClose} 
+          className="w-full max-w-xs mt-8 text-center text-lg sm:text-xl font-black p-3 rounded-full transform transition-all duration-150 ease-in-out backdrop-blur-sm shadow-bevel-inner border focus:outline-none text-brand-light bg-brand-secondary border-brand-light/20 shadow-[0_4px_0_var(--bevel-shadow-dark)] hover:bg-brand-light/10 hover:shadow-[0_6px_0_var(--bevel-shadow-dark)] active:translate-y-1 active:shadow-[0_2px_0_var(--bevel-shadow-dark)]"
+        >
+          {t('back')}
+        </button>
+      </div>
+    </div>
+  );
+};
+// --- END IN-PAGE MODAL COMPONENT ---
+
+
 // --- START CONSTANTS & HELPERS (Moved from EndlessJourneyBar) ---
 const PLANETS_PER_UNIVERSE = 24;
 const GATES_PER_PLANET = 6;
@@ -80,9 +150,6 @@ const PortalLuminaCube: React.FC<{
                 <div className={`${isUnlocked ? 'animate-gem-pulse' : ''}`}>
                     <LuminaCube size={64} animationClass="animate-tumble-mythic" animationDuration="45s" />
                 </div>
-                 <p className={`mt-2 text-center text-sm font-bold tracking-widest transition-all duration-700 ease-in-out ${isUnlocked ? 'text-brand-accent animate-pulse' : 'text-brand-light/30'}`} style={{textShadow: isUnlocked ? '0 0 10px var(--brand-accent)' : 'none'}}>
-                    {t('portalSlogan')}
-                </p>
             </button>
         </div>
     );
@@ -91,7 +158,7 @@ const PortalLuminaCube: React.FC<{
 
 interface MapPageProps {
   playerProfile: PlayerProfile;
-  onSelectMode: (mode: 'progressive' | 'duel' | 'endless') => void;
+  onSelectMode: (mode: 'progressive' | 'duel' | 'endless', startingDifficulty?: 'easy' | 'medium' | 'hard') => void;
   onShowPracticeMenu: () => void;
   onOpenProfile: () => void;
   onOpenShop: () => void;
@@ -119,6 +186,8 @@ const MapPage: React.FC<MapPageProps> = ({
   const { t } = useLanguage();
   const scrollContainerRef = useRef<HTMLElement>(null);
   const [journeyItems, setJourneyItems] = useState<JourneyItem[]>(() => generateUniverseItems(0, customPlanetImages));
+  const [isStartModalOpen, setIsStartModalOpen] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<JourneyItem | null>(null);
     
     useEffect(() => {
         if (!customPlanetImages) return;
@@ -151,6 +220,16 @@ const MapPage: React.FC<MapPageProps> = ({
     const finalGatewayIndex = journeyItems.length - 1;
     const isPortalUnlocked = endlessProgressCount >= finalGatewayIndex;
   
+    const handleNodeClick = useCallback((node: JourneyItem) => {
+        setSelectedNode(node);
+        setIsStartModalOpen(true);
+    }, []);
+
+    const handleStartGame = useCallback((difficulty: 'easy' | 'medium' | 'hard') => {
+        setIsStartModalOpen(false);
+        onSelectMode('endless', difficulty);
+    }, [onSelectMode]);
+
 
   return (
     <div className="relative w-full h-screen text-brand-light font-mono flex flex-col overflow-hidden animate-appear">
@@ -207,12 +286,19 @@ const MapPage: React.FC<MapPageProps> = ({
         {/* Main scrollable content */}
         <main ref={scrollContainerRef} className="w-full flex-grow relative overflow-y-auto overflow-x-hidden custom-scrollbar pb-32">
             <EndlessJourneyBar 
-                onStartEndless={() => onSelectMode('endless')} 
+                onNodeClick={handleNodeClick}
                 scrollContainerRef={scrollContainerRef}
                 currentProgressIndex={endlessProgressCount}
                 journeyItems={journeyItems}
             />
         </main>
+
+        <StartGameModal
+            isOpen={isStartModalOpen}
+            onClose={() => setIsStartModalOpen(false)}
+            onStart={handleStartGame}
+            planetName={selectedNode?.nameKey ? t(selectedNode.nameKey as any) : t('endless')}
+        />
     </div>
   );
 };

@@ -76,8 +76,8 @@ const BonusProgressIndicator: React.FC<BonusProgressIndicatorProps> = ({ label, 
   return (
     <div className={`${isSmall ? '' : 'flex-1'} flex items-center justify-center ${panelClasses} backdrop-blur-sm border px-3 shadow-bevel-inner rounded-lg ${isSmall ? 'h-8' : 'h-10'}`}>
       <div className="flex items-center gap-2" aria-label={t(ariaLabelKey, {current, total})}>
-        {icon && <span className={`${isSmall ? 'text-lg' : 'text-xl'} font-bold`}>{icon}</span>}
-        {label && <span className={`${isSmall ? 'text-xs' : 'text-sm'} font-bold text-brand-light/70 uppercase tracking-wider`}>{label}</span>}
+        {icon && <span className={`${isSmall ? 'text-lg' : 'text-xl'} font-black`}>{icon}</span>}
+        {label && <span className={`${isSmall ? 'text-xs' : 'text-sm'} font-black text-brand-light/70 uppercase tracking-wider`}>{label}</span>}
         <div className="flex items-center gap-1">
           {Array.from({ length: total }).map((_, index) => (
             <ProgressSegment key={index} isFilled={index < current} size={size} />

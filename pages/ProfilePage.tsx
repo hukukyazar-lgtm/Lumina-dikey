@@ -4,6 +4,8 @@ import { PlayerProfile, Language } from '../types';
 import { achievements, avatars } from '../config';
 import { soundService } from '../services/soundService';
 import LeaderboardPage from './LeaderboardPage';
+import GoldCoinIcon from '../components/GoldCoinIcon';
+import GoldCoinStackIcon from '../components/GoldCoinStackIcon';
 
 interface ProfilePageProps {
     onClose: () => void;
@@ -128,7 +130,10 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onClose, playerProfile, setPl
             </div>
             <div className="bg-brand-secondary/50 p-4 rounded-lg flex justify-between items-center">
                 <span className="font-bold text-brand-light/80">{t('totalMoneyStat')}</span>
-                <span className="text-2xl font-extrabold text-brand-warning">☄️{gameMoney}</span>
+                <span className="text-2xl font-extrabold text-brand-warning flex items-center gap-1">
+                    <GoldCoinIcon className="w-6 h-6" />
+                    {gameMoney}
+                </span>
             </div>
         </div>
     );
@@ -139,7 +144,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onClose, playerProfile, setPl
                 const isUnlocked = playerProfile.unlockedAchievements.includes(ach.id);
                 return (
                     <div key={ach.id} className={`bg-brand-secondary/50 p-3 rounded-lg flex items-center gap-4 transition-all duration-300 ${isUnlocked ? 'opacity-100' : 'opacity-50'}`} style={{animationDelay: `${index * 50}ms`}}>
-                        <div className={`text-4xl p-2 rounded-lg ${isUnlocked ? 'bg-brand-primary' : 'bg-black/20'}`}>{ach.icon}</div>
+                        <div className={`w-16 h-16 text-4xl p-2 rounded-lg flex items-center justify-center ${isUnlocked ? 'bg-brand-primary' : 'bg-black/20'}`}>
+                            {ach.icon === 'gold_coin' ? (
+                                <GoldCoinIcon className="w-10 h-10" />
+                            ) : ach.icon === 'gold_coin_stack' ? (
+                                <GoldCoinStackIcon className="w-10 h-10" />
+                            ) : (
+                                ach.icon
+                            )}
+                        </div>
                         <div>
                             <h4 className="font-bold text-brand-light">{t(ach.titleKey)}</h4>
                             <p className="text-sm text-brand-light/70">{t(ach.descriptionKey)}</p>

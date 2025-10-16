@@ -134,166 +134,11 @@ const play = (soundName: 'click' | 'select' | 'start' | 'correct' | 'incorrect' 
   const now = audioContext.currentTime;
 
   switch (soundName) {
-    case 'click': { // Pencil tap sound
+    case 'click': { // Sharp digital blip
         const osc = audioContext.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(200, now);
-        
-        const gain = audioContext.createGain();
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
-
-        osc.connect(gain);
-        gain.connect(sfxGain);
-        osc.start(now);
-        osc.stop(now + 0.08);
-        break;
-      }
-      
-    case 'select': { // Soft paper slide
-        const noise = createWhiteNoise(0.15);
-        if (!noise) break;
-        const gain = audioContext.createGain();
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
-        gain.gain.linearRampToValueAtTime(0, now + 0.15);
-
-        const filter = audioContext.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(3000, now);
-        filter.Q.value = 2;
-
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(sfxGain);
-        noise.start(now);
-        noise.stop(now + 0.15);
-        break;
-    }
-
-    case 'start': { // Ascending gentle tones
-        const arpeggio = [261.63, 392.00, 523.25];
-        arpeggio.forEach((freq, i) => {
-            const arpOsc = audioContext.createOscillator();
-            const arpGain = audioContext.createGain();
-            arpOsc.type = 'sine';
-            arpOsc.frequency.setValueAtTime(freq, now + i * 0.1);
-
-            arpGain.gain.setValueAtTime(0.4, now + i * 0.1);
-            arpGain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.1 + 0.2);
-            
-            arpOsc.connect(arpGain);
-            arpGain.connect(sfxGain);
-            arpOsc.start(now + i * 0.1);
-            arpOsc.stop(now + i * 0.1 + 0.2);
-        });
-        break;
-    }
-
-    case 'correct': { // Gentle page turn/rustle
-        const noise = createWhiteNoise(0.2);
-        if (!noise) break;
-        const gain = audioContext.createGain();
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
-
-        const filter = audioContext.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.setValueAtTime(4000, now);
-        filter.Q.value = 1;
-
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(sfxGain);
-        noise.start(now);
-        noise.stop(now + 0.2);
-        break;
-    }
-
-    case 'incorrect': { // Paper crumple
-        const noise = createWhiteNoise(0.2);
-        if (!noise) break;
-        const gain = audioContext.createGain();
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.4, now + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
-
-        const filter = audioContext.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(1500, now);
-        filter.Q.value = 1.5;
-
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(sfxGain);
-        noise.start(now);
-        noise.stop(now + 0.2);
-        break;
-    }
-    
-    case 'lifeLost': { // Short paper rip
-        const noise = createWhiteNoise(0.15);
-        if(!noise) break;
-        const gain = audioContext.createGain();
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
-
-        const filter = audioContext.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(5000, now);
-        filter.frequency.linearRampToValueAtTime(500, now + 0.15);
-        
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(sfxGain);
-        noise.start(now);
-        noise.stop(now + 0.15);
-        break;
-    }
-
-    case 'gameOver': {
-        const freqs = [130.81, 123.47]; // C3, B2
-        freqs.forEach((freq, i) => {
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + i * 0.3);
-
-            gain.gain.setValueAtTime(0.4, now + i * 0.3);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.3 + 0.8);
-            
-            osc.connect(gain);
-            gain.connect(sfxGain);
-            osc.start(now + i * 0.3);
-            osc.stop(now + i * 0.3 + 0.8);
-        });
-        break;
-    }
-
-    case 'bonus': {
-        const freqs = [523.25, 659.25, 783.99]; // C5, E5, G5
-        freqs.forEach((freq, i) => {
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + i * 0.1);
-
-            gain.gain.setValueAtTime(0, now + i * 0.1);
-            gain.gain.linearRampToValueAtTime(0.5, now + i * 0.1 + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.1 + 0.3);
-
-            osc.connect(gain);
-            gain.connect(sfxGain);
-            osc.start(now + i * 0.1);
-            osc.stop(now + i * 0.1 + 0.3);
-        });
-        break;
-    }
-    case 'countdownTick': {
-        const osc = audioContext.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(659.25, now); // E5
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(440, now + 0.08);
 
         const gain = audioContext.createGain();
         gain.gain.setValueAtTime(0.3, now);
@@ -304,20 +149,175 @@ const play = (soundName: 'click' | 'select' | 'start' | 'correct' | 'incorrect' 
         osc.start(now);
         osc.stop(now + 0.1);
         break;
+      }
+      
+    case 'select': { // Short digital whoosh
+        const noise = createWhiteNoise(0.15);
+        if (!noise) break;
+        
+        const gain = audioContext.createGain();
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+
+        const filter = audioContext.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.Q.value = 2;
+        filter.frequency.setValueAtTime(400, now);
+        filter.frequency.exponentialRampToValueAtTime(2500, now + 0.1);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(sfxGain);
+        noise.start(now);
+        noise.stop(now + 0.15);
+        break;
     }
-    case 'countdownGo': {
+
+    case 'start': { // Ascending synth tones
+        const arpeggio = [392.00, 523.25, 659.25, 783.99]; // G4, C5, E5, G5
+        arpeggio.forEach((freq, i) => {
+            const arpOsc = audioContext.createOscillator();
+            const arpGain = audioContext.createGain();
+            arpOsc.type = 'sawtooth';
+            arpOsc.frequency.setValueAtTime(freq, now + i * 0.08);
+
+            arpGain.gain.setValueAtTime(0.3, now + i * 0.08);
+            arpGain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.08 + 0.2);
+            
+            arpOsc.connect(arpGain);
+            arpGain.connect(sfxGain);
+            arpOsc.start(now + i * 0.08);
+            arpOsc.stop(now + i * 0.08 + 0.2);
+        });
+        break;
+    }
+
+    case 'correct': { // Positive synth chime (Major 3rd)
+        const freqs = [523.25, 659.25]; // C5, E5
+        freqs.forEach((freq) => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now);
+
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.4, now + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+            
+            osc.connect(gain);
+            gain.connect(sfxGain);
+            osc.start(now);
+            osc.stop(now + 0.4);
+        });
+        break;
+    }
+
+    case 'incorrect': { // Low-frequency error buzz
+        const freqs = [110, 112]; // A2, slightly detuned
+        freqs.forEach(freq => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freq, now);
+
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+            
+            osc.connect(gain);
+            gain.connect(sfxGain);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        });
+        break;
+    }
+    
+    case 'lifeLost': { // Glitchy power-down sound
         const osc = audioContext.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(783.99, now); // G5
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.4);
 
         const gain = audioContext.createGain();
-        gain.gain.setValueAtTime(0.5, now);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+        
+        osc.connect(gain);
+        gain.connect(sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.4);
+        break;
+    }
+
+    case 'gameOver': { // Descending melancholic synth
+        const freqs = [261.63, 233.08, 207.65]; // C4, A#3, G#3
+        freqs.forEach((freq, i) => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + i * 0.3);
+
+            gain.gain.setValueAtTime(0.4, now + i * 0.3);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.3 + 0.6);
+            
+            osc.connect(gain);
+            gain.connect(sfxGain);
+            osc.start(now + i * 0.3);
+            osc.stop(now + i * 0.3 + 0.6);
+        });
+        break;
+    }
+
+    case 'bonus': { // Sparkling arpeggio
+        const freqs = [1046.50, 1318.51, 1567.98, 2093.00]; // C6, E6, G6, C7
+        freqs.forEach((freq, i) => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + i * 0.07);
+
+            gain.gain.setValueAtTime(0, now + i * 0.07);
+            gain.gain.linearRampToValueAtTime(0.4, now + i * 0.07 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.07 + 0.2);
+
+            osc.connect(gain);
+            gain.connect(sfxGain);
+            osc.start(now + i * 0.07);
+            osc.stop(now + i * 0.07 + 0.2);
+        });
+        break;
+    }
+    case 'countdownTick': { // Precise synth tick
+        const osc = audioContext.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1200, now);
+
+        const gain = audioContext.createGain();
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
 
         osc.connect(gain);
         gain.connect(sfxGain);
         osc.start(now);
-        osc.stop(now + 0.2);
+        osc.stop(now + 0.08);
+        break;
+    }
+    case 'countdownGo': { // Powerful synth chord
+        const freqs = [523.25, 659.25, 783.99]; // C Major chord
+        freqs.forEach(freq => {
+            const osc = audioContext.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, now);
+
+            const gain = audioContext.createGain();
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+
+            osc.connect(gain);
+            gain.connect(sfxGain);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        });
         break;
     }
   }

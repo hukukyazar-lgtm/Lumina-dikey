@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, CSSProperties } from 'react';
 import { useLanguage } from '../components/LanguageContext';
 import { soundService } from '../services/soundService';
-import { generateImageFromPrompt, describeImage, editImage } from '../services/geminiService';
+import { generateImageFromPrompt, describeImage, editImage, generateDetailedPrompt, generateButtonStructureFromPrompt } from '../services/geminiService';
 import { saveGeneratedImages, loadGeneratedImages, saveCustomButtonStructure } from '../services/progressService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { planetNameTranslationKeys, cubeStyles } from '../config';
@@ -15,12 +15,22 @@ interface DesignStudioPageProps {
     onSetPlayerAvatar: (imageUrl: string) => void;
     onSetGameBackground: (imageUrl: string) => void;
     onSetCustomButtonTexture: (imageUrl: string) => void;
+    onSetCustomCubeTexture: (imageUrl: string) => void;
     onSetCustomCubeStyle: (styleId: string) => void;
     activeCubeStyle: string;
 }
 
 type StudioTab = 'texture' | 'structure' | 'cube';
 type ButtonSurface = 'matte' | 'glossy' | 'metallic';
+
+const loadingMessages: (keyof typeof import('../translations').translations.en)[] = [
+    'loading_message_1',
+    'loading_message_2',
+    'loading_message_3',
+    'loading_message_4',
+    'loading_message_5',
+];
+
 
 // --- START NEW HELPERS ---
 /**
@@ -79,28 +89,41 @@ const dataUrlToParts = (dataUrl: string): { data: string; mimeType: string } => 
 // --- END NEW HELPERS ---
 
 
-const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlanetImage, onSetMenuBackground, onSetPlayerAvatar, onSetGameBackground, onSetCustomButtonTexture, onSetCustomCubeStyle, activeCubeStyle }) => {
-    const { t } = useLanguage();
+const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlanetImage, onSetMenuBackground, onSetPlayerAvatar, onSetGameBackground, onSetCustomButtonTexture, onSetCustomCubeTexture, onSetCustomCubeStyle, activeCubeStyle }) => {
+    const { t, gameplayLanguage } = useLanguage();
     const [activeStudioTab, setActiveStudioTab] = useState<StudioTab>('texture');
     
     // Texture State
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState('');
     const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
     const [sourceImage, setSourceImage] = useState<{ data: string; mimeType: string; url: string } | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [selectedPlanetIndex, setSelectedPlanetIndex] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [savedImages, setSavedImages] = useState<string[]>(loadGeneratedImages());
+    const [isPromptStudioOpen, setIsPromptStudioOpen] = useState(false);
     
     // Structure State
     const [borderRadius, setBorderRadius] = useState(16); // px
     const [shadowDepth, setShadowDepth] = useState(4); // px
     const [highlightIntensity, setHighlightIntensity] = useState(0.5); // 0 to 1
     const [surface, setSurface] = useState<ButtonSurface>('glossy');
+    const [structurePrompt, setStructurePrompt] = useState('');
+    const [isGeneratingStructure, setIsGeneratingStructure] = useState(false);
+    const [structureError, setStructureError] = useState<string | null>(null);
+
 
     // Cube State
     const [selectedCubeStyle, setSelectedCubeStyle] = useState<string>(activeCubeStyle);
+    
+    // Prompt Studio State
+    const [simpleIdea, setSimpleIdea] = useState('');
+    const [artStyle, setArtStyle] = useState('photorealistic');
+    const [mood, setMood] = useState('epic');
+    const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
+    const [promptError, setPromptError] = useState<string | null>(null);
 
     const updateSavedImages = (updater: React.SetStateAction<string[]>) => {
         setSavedImages(prev => {
@@ -130,6 +153,7 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
         if (file) {
             soundService.play('click');
             setIsLoading(true);
+            setLoadingMessage(t(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]));
             setError(null);
             try {
                 // Step 1: Read file as a data URL to pass to the compressor
@@ -163,6 +187,7 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
 
         soundService.play('start');
         setIsLoading(true);
+        setLoadingMessage(t(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]));
         setError(null);
 
         try {
@@ -183,6 +208,7 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
 
         soundService.play('start');
         setIsLoading(true);
+        setLoadingMessage(t(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]));
         setError(null);
         setGeneratedImageUrl(null);
 
@@ -252,6 +278,20 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
         onSetGameBackground(activeDataUrl);
         onClose();
     };
+    
+    const handleSetAsButtonTexture = () => {
+        if (!activeDataUrl) return;
+        soundService.play('select');
+        onSetCustomButtonTexture(activeDataUrl);
+        onClose();
+    };
+    
+    const handleSetAsCubeTexture = () => {
+        if (!activeDataUrl) return;
+        soundService.play('select');
+        onSetCustomCubeTexture(activeDataUrl);
+        onClose();
+    };
 
     const getSurfaceBackground = (surf: ButtonSurface): string => {
         switch(surf) {
@@ -262,14 +302,8 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
         }
     };
     
-    const handleApplyStyles = () => {
+    const handleApplyStructure = () => {
         soundService.play('select');
-        // Apply and save button texture
-        if (activeDataUrl) {
-            onSetCustomButtonTexture(activeDataUrl);
-        }
-        
-        // Apply and save button structure
         const structure = {
             '--custom-button-border-radius': `${borderRadius}px`,
             '--custom-button-box-shadow': `0 ${shadowDepth}px ${shadowDepth * 1.5}px -${shadowDepth / 2}px rgba(0, 0, 0, 0.2), 0 ${shadowDepth / 2}px ${shadowDepth}px -${shadowDepth / 4}px rgba(0, 0, 0, 0.1)`,
@@ -282,10 +316,33 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
             document.documentElement.style.setProperty(key, value);
         });
         saveCustomButtonStructure(structure);
-        
-        // Apply and save cube style
+        onClose();
+    };
+
+    const handleGenerateStructure = async () => {
+        if (isGeneratingStructure || !structurePrompt.trim()) return;
+        soundService.play('start');
+        setIsGeneratingStructure(true);
+        setStructureError(null);
+        try {
+            const result = await generateButtonStructureFromPrompt(structurePrompt);
+            if (result.borderRadius !== undefined) setBorderRadius(result.borderRadius);
+            if (result.shadowDepth !== undefined) setShadowDepth(result.shadowDepth);
+            if (result.highlightIntensity !== undefined) setHighlightIntensity(result.highlightIntensity);
+            if (result.surface !== undefined) setSurface(result.surface);
+            soundService.play('bonus');
+        } catch (e) {
+            console.error(e);
+            setStructureError(t('styleGenError'));
+            soundService.play('gameOver');
+        } finally {
+            setIsGeneratingStructure(false);
+        }
+    };
+    
+    const handleApplyCubeStyle = () => {
+        soundService.play('select');
         onSetCustomCubeStyle(selectedCubeStyle);
-        
         onClose();
     };
     
@@ -296,9 +353,7 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
         setPrompt('');
     }
 
-    // This object computes the CSS variable values from the slider states.
-    // It's applied to a container around the preview button to override the global defaults.
-    const previewContainerStyle: CSSProperties = useMemo(() => {
+    const previewContainerStyle = useMemo(() => {
         const selectedStyleData = cubeStyles.find(s => s.id === selectedCubeStyle);
         const cubeVars = selectedStyleData ? selectedStyleData.variables : {};
 
@@ -310,7 +365,7 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
             '--custom-button-text-color': 'var(--brand-accent-secondary)',
             '--custom-button-highlight-intensity': `${highlightIntensity}`,
             ...cubeVars
-        };
+        } as CSSProperties;
     }, [borderRadius, shadowDepth, highlightIntensity, surface, selectedCubeStyle]);
 
     
@@ -318,36 +373,65 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
     const disabledActionButtonClasses = "disabled:bg-gray-600 disabled:border-gray-500 disabled:text-white/50 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none";
     const greenButtonClasses = "text-brand-bg bg-brand-correct/80 border-brand-correct shadow-[0_4px_0_var(--brand-correct-shadow)] hover:bg-brand-correct hover:shadow-[0_6px_0_var(--brand-correct-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-correct-shadow)]";
 
-    const renderCubeStyleSelector = () => (
-         <main className="flex-grow flex flex-col gap-4 min-h-0">
-            <div className="flex-grow p-4 bg-brand-secondary/30 rounded-lg shadow-inner-strong flex items-center justify-center" style={previewContainerStyle}>
-                <div className="flex flex-col items-center gap-8" style={{ perspective: '1000px' }}>
-                     <ChoiceButton
-                        word={t('play')}
-                        onClick={() => {}}
-                        disabled={false}
-                        status={'default'}
-                    />
-                    <div className="transform scale-125">
-                        <LetterCube letter="A" size={64} animationDelay="0s" />
-                    </div>
+    const handleGenerateDetailedPrompt = async () => {
+        if (isGeneratingPrompt || !simpleIdea.trim()) return;
+        soundService.play('start');
+        setIsGeneratingPrompt(true);
+        setPromptError(null);
+        try {
+            const result = await generateDetailedPrompt(simpleIdea, artStyle, mood, gameplayLanguage);
+            setPrompt(result); // Set the main prompt
+            soundService.play('bonus');
+            setIsPromptStudioOpen(false); // Close the studio after generating
+        } catch (e) {
+            console.error(e);
+            setPromptError(t('promptGenError'));
+            soundService.play('gameOver');
+        } finally {
+            setIsGeneratingPrompt(false);
+        }
+    };
+
+    const renderPromptStudio = () => (
+        <div className="flex-shrink-0 flex flex-col gap-2 p-3 mt-2 bg-brand-secondary/30 rounded-lg">
+            <p className="text-brand-light/70 text-sm">{t('promptEnhancerDesc')}</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+                <input value={simpleIdea} onChange={e => setSimpleIdea(e.target.value)} placeholder={t('promptIdeaPlaceholder')} className="w-full flex-grow p-2 bg-brand-secondary/50 border-2 border-brand-light/20 rounded-lg text-base text-brand-light focus:outline-none focus:border-brand-accent-secondary" disabled={isGeneratingPrompt}/>
+                <div className="grid grid-cols-2 gap-2">
+                    <select value={artStyle} onChange={e => setArtStyle(e.target.value)} disabled={isGeneratingPrompt} className="bg-brand-secondary p-2 rounded-lg text-sm font-bold text-brand-light border-2 border-brand-light/20 focus:outline-none focus:border-brand-accent-secondary custom-scrollbar" aria-label={t('artStyle')}>
+                        <option value="photorealistic">{t('style_photorealistic')}</option>
+                        <option value="fantasy">{t('style_fantasy')}</option>
+                        <option value="anime">{t('style_anime')}</option>
+                        <option value="pixel">{t('style_pixel')}</option>
+                        <option value="cyberpunk">{t('style_cyberpunk')}</option>
+                    </select>
+                     <select value={mood} onChange={e => setMood(e.target.value)} disabled={isGeneratingPrompt} className="bg-brand-secondary p-2 rounded-lg text-sm font-bold text-brand-light border-2 border-brand-light/20 focus:outline-none focus:border-brand-accent-secondary custom-scrollbar" aria-label={t('mood')}>
+                        <option value="epic">{t('mood_epic')}</option>
+                        <option value="dreamy">{t('mood_dreamy')}</option>
+                        <option value="dark">{t('mood_dark')}</option>
+                        <option value="joyful">{t('mood_joyful')}</option>
+                        <option value="mysterious">{t('mood_mysterious')}</option>
+                    </select>
                 </div>
             </div>
-             <div className="flex-shrink-0">
-                <h3 className="text-lg font-bold text-brand-light/80 mb-2">{t('cubeStyle')}</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {cubeStyles.filter(s => s.id !== 'default').map(style => (
-                        <button key={style.id} onClick={() => setSelectedCubeStyle(style.id)} className={`p-3 rounded-lg border-2 transition-all ${selectedCubeStyle === style.id ? 'border-brand-accent-secondary scale-105' : 'border-transparent bg-brand-secondary/50'}`}>
-                           <div className="w-full h-16 rounded-md mb-2 flex items-center justify-center text-4xl" style={style.variables as CSSProperties}>
-                                <span style={{fontFamily: style.variables['--cube-font-family'], color: style.variables['--cube-face-text-color'], textShadow: style.variables['--cube-face-text-shadow']}}>L</span>
-                           </div>
-                           <h4 className="font-bold text-brand-light">{t(style.nameKey as any)}</h4>
-                           <p className="text-xs text-brand-light/60">{t(style.descriptionKey as any)}</p>
-                        </button>
-                    ))}
+            {promptError && <p className="text-brand-accent text-sm font-bold">{promptError}</p>}
+            <button onClick={handleGenerateDetailedPrompt} disabled={isGeneratingPrompt || !simpleIdea.trim()} className={`${actionButtonBaseClasses} text-sm text-brand-bg bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)] hover:bg-brand-accent-secondary ${disabledActionButtonClasses}`}>
+                {isGeneratingPrompt ? t('generating') : t('generateDetailedPrompt')}
+            </button>
+        </div>
+    );
+
+    const renderCombinedPreview = () => (
+        <div className="flex-grow p-4 bg-brand-secondary/30 rounded-lg shadow-inner-strong flex items-center justify-center" style={previewContainerStyle}>
+            <div className="flex flex-col items-center gap-8" style={{ perspective: '1000px' }}>
+                <div className="w-48">
+                    <ChoiceButton word={t('preview')} onClick={() => {}} disabled={false} status={'default'} />
                 </div>
-             </div>
-        </main>
+                <div className="transform scale-125">
+                    <LetterCube letter="A" size={64} animationDelay="0s" />
+                </div>
+            </div>
+        </div>
     );
 
     return (
@@ -358,63 +442,47 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
                     <h2 className="text-3xl sm:text-4xl font-extrabold text-brand-light">{t('designStudioTitle')}</h2>
                 </header>
                 
-                <div className="flex-shrink-0 flex w-full max-w-sm mx-auto items-center p-1 bg-black/20 rounded-full border border-transparent shadow-inner mb-4">
+                <div className="flex-shrink-0 flex w-full mx-auto items-center p-1 bg-black/20 rounded-full border border-transparent shadow-inner mb-4">
                     {(['texture', 'structure', 'cube'] as StudioTab[]).map(tab => (
-                        <button key={tab} onClick={() => setActiveStudioTab(tab)} className={`w-1/3 h-10 flex items-center justify-center text-sm font-bold transition-all duration-300 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-bg focus:ring-brand-accent-secondary/50 ${activeStudioTab === tab ? 'bg-brand-accent-secondary text-white shadow-sm' : 'bg-transparent text-brand-light/60 hover:text-brand-light'}`}>
+                        <button key={tab} onClick={() => setActiveStudioTab(tab)} className={`w-1/3 h-10 flex items-center justify-center text-xs sm:text-sm font-bold transition-all duration-300 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-bg focus:ring-brand-accent-secondary/50 ${activeStudioTab === tab ? 'bg-brand-accent-secondary text-white shadow-sm' : 'bg-transparent text-brand-light/60 hover:text-brand-light'}`}>
                             {t(tab)}
                         </button>
                     ))}
                 </div>
 
-
                 {activeStudioTab === 'texture' ? (
                 <main className="flex-grow flex flex-col gap-4 min-h-0">
-                    {/* Prompt and Upload Section */}
                     <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2">
-                        <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={sourceImage ? t('editPromptPlaceholder') : t('promptPlaceholder')} className="w-full flex-grow p-3 bg-brand-secondary/50 border-2 border-brand-light/20 rounded-lg text-lg text-brand-light focus:outline-none focus:border-brand-accent-secondary focus:ring-2 focus:ring-brand-accent-secondary/50 resize-none custom-scrollbar" rows={3} disabled={isLoading}/>
+                        <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={sourceImage ? t('editPromptPlaceholder') : t('promptPlaceholder')} className="w-full flex-grow p-3 bg-brand-secondary/50 border-2 border-brand-light/20 rounded-lg text-lg text-brand-light focus:outline-none focus:border-brand-accent-secondary focus:ring-2 focus:ring-brand-accent-secondary/50 resize-none custom-scrollbar" rows={2} disabled={isLoading}/>
                          <div className="flex flex-col gap-2">
                             <input type="file" accept="image/png, image/jpeg, image/webp" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-                            <button onClick={() => fileInputRef.current?.click()} disabled={isLoading} className={`${actionButtonBaseClasses} text-white bg-brand-tertiary border-transparent`}>{t('uploadImage')}</button>
-                            {sourceImage && ( <button onClick={handleDescribe} disabled={isLoading} className={`${actionButtonBaseClasses} text-brand-bg bg-brand-quaternary border-transparent`}>{t('describeImage')}</button>)}
+                            <button onClick={() => fileInputRef.current?.click()} disabled={isLoading} className={`${actionButtonBaseClasses} text-sm text-white bg-brand-tertiary border-transparent`}>{t('uploadImage')}</button>
+                            {sourceImage && ( <button onClick={handleDescribe} disabled={isLoading} className={`${actionButtonBaseClasses} text-sm text-brand-bg bg-brand-quaternary border-transparent`}>{t('describeImage')}</button>)}
                         </div>
                     </div>
+                     <button onClick={() => setIsPromptStudioOpen(p => !p)} className="flex-shrink-0 text-sm font-bold text-brand-accent-secondary hover:underline">{t('promptStudio')} {isPromptStudioOpen ? '[-]' : '[+]'}</button>
+                    {isPromptStudioOpen && renderPromptStudio()}
                     
-                    <div className="relative flex-grow bg-brand-secondary/30 rounded-lg shadow-inner-strong flex items-center justify-center overflow-hidden">
-                        {isLoading && <LoadingSpinner />}
+                    <div className="relative flex-grow bg-brand-secondary/30 rounded-lg shadow-inner-strong flex flex-col items-center justify-center overflow-hidden">
+                        {isLoading && <div className="z-10 text-center"><LoadingSpinner /><p className="mt-20 text-lg font-bold text-brand-light">{loadingMessage}</p></div>}
                         {error && !isLoading && ( <p className="text-brand-accent text-lg font-bold">{error}</p> )}
                         {activeDisplayUrl && !isLoading && ( <img src={activeDisplayUrl} alt={prompt || "User-generated or uploaded image"} className="w-full h-full object-contain animate-appear" /> )}
                         {!isLoading && !activeDisplayUrl && !error && ( <p className="text-brand-light/50">{t('designStudioDesc')}</p> )}
                         {sourceImage && !isLoading && ( <button onClick={handleClearImage} className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-black/80 transition-colors z-10" title={t('clearImage')}><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg></button>)}
                         {activeDataUrl && !savedImages.includes(activeDataUrl) && !isLoading && (<button onClick={handleSaveImage} className="absolute top-2 left-2 px-3 py-1 bg-black/50 text-white rounded-full hover:bg-black/80 transition-colors z-10 flex items-center gap-1 text-sm" title={t('saveToGallery')}><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v1H5V4zM5 7h10v9a2 2 0 01-2 2H7a2 2 0 01-2-2V7z" /></svg>Save</button>)}
                     </div>
-
-                    <div className="flex-shrink-0 h-28 bg-brand-secondary/30 p-2 rounded-lg shadow-inner-strong mt-2">
-                        <h3 className="text-sm font-bold text-brand-light/70 mb-1 text-left px-1">{t('gallery')}</h3>
-                        <div className="flex gap-2 h-20 overflow-x-auto custom-scrollbar pb-1">
-                            {savedImages.length === 0 ? ( <div className="w-full flex items-center justify-center h-full"><p className="text-brand-light/50">Your saved images will appear here.</p></div>) : ( savedImages.map((imgUrl, index) => (
-                                    <div key={index} className="relative h-full aspect-square flex-shrink-0 group">
-                                        <img src={imgUrl} alt={`Saved image ${index + 1}`} className="w-full h-full object-cover rounded-md cursor-pointer border-2 border-transparent group-hover:border-brand-accent-secondary transition-colors" onClick={() => handleSelectSavedImage(imgUrl)}/>
-                                        <button onClick={() => handleDeleteSavedImage(index)} className="absolute -top-1 -right-1 p-1 bg-brand-accent text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg></button>
-                                    </div>)))}
-                        </div>
-                    </div>
                 </main>
                 ) : activeStudioTab === 'structure' ? (
-                <main className="flex-grow flex flex-col md:flex-row gap-4 min-h-0">
-                    <div className="md:w-1/2 flex flex-col gap-4">
-                        <div className="flex-grow p-4 bg-brand-secondary/30 rounded-lg shadow-inner-strong flex items-center justify-center" style={previewContainerStyle}>
-                            <div className="w-48">
-                                <ChoiceButton
-                                    word={t('play')}
-                                    onClick={() => {}}
-                                    disabled={false}
-                                    status={'default'}
-                                />
-                            </div>
-                        </div>
+                <main className="flex-grow flex flex-col gap-4 min-h-0">
+                    {renderCombinedPreview()}
+                    <div className="flex-shrink-0 flex flex-col gap-3 p-3 bg-brand-secondary/30 rounded-lg shadow-inner-strong">
+                        <textarea value={structurePrompt} onChange={e => setStructurePrompt(e.target.value)} placeholder={t('describeButtonStyle')} className="w-full p-2 bg-brand-secondary/50 border-2 border-brand-light/20 rounded-lg text-base text-brand-light focus:outline-none focus:border-brand-accent-secondary resize-none" rows={2} disabled={isGeneratingStructure} />
+                        <button onClick={handleGenerateStructure} disabled={isGeneratingStructure || !structurePrompt.trim()} className={`${actionButtonBaseClasses} text-sm text-brand-bg bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)] hover:bg-brand-accent-secondary ${disabledActionButtonClasses}`}>
+                            {isGeneratingStructure ? t('generatingStyle') : t('generateStyle')}
+                        </button>
+                        {structureError && <p className="text-brand-accent text-sm font-bold">{structureError}</p>}
                     </div>
-                    <div className="md:w-1/2 flex flex-col gap-3 p-4 bg-brand-secondary/30 rounded-lg shadow-inner-strong">
-                        {/* Structure Controls */}
+                    <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-brand-secondary/30 rounded-lg shadow-inner-strong">
                         <div className="w-full">
                             <label className="text-sm font-bold text-brand-light/70">{t('borderRadius')} ({borderRadius}px)</label>
                             <input type="range" min="0" max="50" value={borderRadius} onChange={e => setBorderRadius(Number(e.target.value))} className="w-full h-2 rounded-lg appearance-none cursor-pointer custom-slider"/>
@@ -438,40 +506,62 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
                     </div>
                 </main>
                 ) : (
-                    renderCubeStyleSelector()
+                <main className="flex-grow flex flex-col gap-4 min-h-0">
+                    {renderCombinedPreview()}
+                     <div className="flex-shrink-0">
+                        <h3 className="text-lg font-bold text-brand-light/80 mb-2">{t('cubeStyle')}</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {cubeStyles.filter(s => s.id !== 'default').map(style => (
+                                <button key={style.id} onClick={() => setSelectedCubeStyle(style.id)} className={`p-3 rounded-lg border-2 transition-all ${selectedCubeStyle === style.id ? 'border-brand-accent-secondary scale-105' : 'border-transparent bg-brand-secondary/50'}`}>
+                                   <div className="w-full h-16 rounded-md mb-2 flex items-center justify-center text-4xl" style={style.variables as CSSProperties}>
+                                        <span style={{fontFamily: style.variables['--cube-font-family'], color: style.variables['--cube-face-text-color'], textShadow: style.variables['--cube-face-text-shadow']}}>L</span>
+                                   </div>
+                                   <h4 className="font-bold text-brand-light">{t(style.nameKey as any)}</h4>
+                                   <p className="text-xs text-brand-light/60">{t(style.descriptionKey as any)}</p>
+                                </button>
+                            ))}
+                        </div>
+                     </div>
+                </main>
                 )}
 
                 <footer className="flex-shrink-0 mt-4 flex flex-col gap-3">
                     {activeStudioTab === 'texture' && (
                     <>
-                        <div className="flex items-stretch gap-2 bg-brand-secondary/30 p-2 rounded-lg">
-                            <select value={selectedPlanetIndex} onChange={(e) => setSelectedPlanetIndex(Number(e.target.value))} disabled={!activeDataUrl || isLoading} className="bg-brand-secondary p-3 rounded-lg text-lg font-bold text-brand-light border-2 border-brand-light/20 focus:outline-none focus:border-brand-accent-secondary custom-scrollbar" aria-label={t('selectPlanet')}>
-                                {planetNameTranslationKeys.map((key, index) => (
-                                    <option key={index} value={index}>{t(key as any)}</option>
-                                ))}
-                            </select>
-                            <button onClick={handleSetPlanet} disabled={!activeDataUrl || isLoading} className={`${actionButtonBaseClasses} ${greenButtonClasses} ${disabledActionButtonClasses} flex-grow`}>{t('setAsPlanetBackground')}</button>
-                        </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             <button onClick={handleSetMenuBG} disabled={!activeDataUrl || isLoading} className={`${actionButtonBaseClasses} ${greenButtonClasses} ${disabledActionButtonClasses}`}>{t('setAsMenuBackground')}</button>
                             <button onClick={handleSetAsAvatar} disabled={!activeDataUrl || isLoading} className={`${actionButtonBaseClasses} ${greenButtonClasses} ${disabledActionButtonClasses}`}>{t('setAsAvatar')}</button>
                             <button onClick={handleSetAsGameBG} disabled={!activeDataUrl || isLoading} className={`${actionButtonBaseClasses} ${greenButtonClasses} ${disabledActionButtonClasses}`}>{t('setAsGameBackground')}</button>
+                            <button onClick={handleSetAsButtonTexture} disabled={!activeDataUrl || isLoading} className={`${actionButtonBaseClasses} ${greenButtonClasses} ${disabledActionButtonClasses}`}>{t('setAsButtonStyle')}</button>
+                            <button onClick={handleSetAsCubeTexture} disabled={!activeDataUrl || isLoading} className={`${actionButtonBaseClasses} ${greenButtonClasses} ${disabledActionButtonClasses}`}>{t('setAsCubeTexture')}</button>
+                            <div className="flex items-stretch gap-2 bg-brand-secondary/30 p-1 rounded-lg col-span-2 sm:col-span-1">
+                                <select value={selectedPlanetIndex} onChange={(e) => setSelectedPlanetIndex(Number(e.target.value))} disabled={!activeDataUrl || isLoading} className="bg-brand-secondary p-2 rounded-lg text-sm font-bold text-brand-light border-2 border-brand-light/20 focus:outline-none focus:border-brand-accent-secondary custom-scrollbar" aria-label={t('selectPlanet')}>
+                                    {planetNameTranslationKeys.map((key, index) => ( <option key={index} value={index}>{t(key as any)}</option> ))}
+                                </select>
+                                <button onClick={handleSetPlanet} disabled={!activeDataUrl || isLoading} className={`${actionButtonBaseClasses} ${greenButtonClasses} ${disabledActionButtonClasses} flex-grow text-sm p-2`}>{t('setAsPlanetBackground')}</button>
+                            </div>
                         </div>
                     </>
                     )}
                     
                     <div className="flex flex-col sm:flex-row items-center gap-4">
                         <button onClick={onClose} className={`${actionButtonBaseClasses} text-white bg-brand-accent border-transparent hover:shadow-xl hover:-translate-y-1 active:translate-y-0 active:shadow-lg flex-1`}>{t('back')}</button>
-                        {activeStudioTab === 'texture' ? (
-                        <button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className={`${actionButtonBaseClasses} text-brand-bg bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)] hover:bg-brand-accent-secondary hover:shadow-[0_6px_0_var(--brand-accent-secondary-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-secondary-shadow)] disabled:bg-gray-600 disabled:border-gray-500 disabled:text-white/50 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none flex-1`}>
-                            {isLoading ? t('generating') : t('generate')}
-                        </button>
-                        ) : (
-                        <button onClick={handleApplyStyles} className={`${actionButtonBaseClasses} ${greenButtonClasses} flex-1`}>
-                            {t('apply')}
-                        </button>
+                        
+                        {activeStudioTab === 'texture' && (
+                            <button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className={`${actionButtonBaseClasses} text-brand-bg bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)] hover:bg-brand-accent-secondary hover:shadow-[0_6px_0_var(--brand-accent-secondary-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-secondary-shadow)] ${disabledActionButtonClasses} flex-1`}>
+                                {isLoading ? t('generating') : t('generate')}
+                            </button>
                         )}
-
+                        {activeStudioTab === 'structure' && (
+                             <button onClick={handleApplyStructure} className={`${actionButtonBaseClasses} ${greenButtonClasses} flex-1`}>
+                                {t('applyStructure')}
+                            </button>
+                        )}
+                        {activeStudioTab === 'cube' && (
+                             <button onClick={handleApplyCubeStyle} className={`${actionButtonBaseClasses} ${greenButtonClasses} flex-1`}>
+                                {t('applyCubeStyle')}
+                            </button>
+                        )}
                     </div>
                 </footer>
             </div>

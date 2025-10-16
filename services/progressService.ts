@@ -10,6 +10,7 @@ const CUSTOM_PLANET_IMAGES_KEY = 'lumina-custom-planet-images'; // Renamed from 
 const CUSTOM_MENU_BACKGROUND_KEY = 'lumina-custom-menu-background'; // New key for menu bg
 const CUSTOM_GAME_BACKGROUND_KEY = 'lumina-custom-game-background';
 const CUSTOM_BUTTON_TEXTURE_KEY = 'lumina-custom-button-texture';
+const CUSTOM_CUBE_TEXTURE_KEY = 'lumina-custom-cube-texture'; // New key
 const CUSTOM_BUTTON_STRUCTURE_KEY = 'lumina-custom-button-structure';
 const CUSTOM_CUBE_STYLE_KEY = 'lumina-custom-cube-style'; // New key
 const CUSTOM_GENERATED_IMAGES_KEY = 'lumina-generated-images';
@@ -68,6 +69,24 @@ export const loadCustomButtonTexture = (): string | null => {
         return localStorage.getItem(CUSTOM_BUTTON_TEXTURE_KEY);
     } catch (error) {
         console.error("Failed to load custom button style:", error);
+        return null;
+    }
+};
+
+// --- Custom Cube Texture --- (NEW)
+export const saveCustomCubeTexture = (imageUrl: string): void => {
+    try {
+        localStorage.setItem(CUSTOM_CUBE_TEXTURE_KEY, imageUrl);
+    } catch (error) {
+        console.error("Failed to save custom cube texture:", error);
+    }
+};
+
+export const loadCustomCubeTexture = (): string | null => {
+    try {
+        return localStorage.getItem(CUSTOM_CUBE_TEXTURE_KEY);
+    } catch (error) {
+        console.error("Failed to load custom cube texture:", error);
         return null;
     }
 };
@@ -154,7 +173,7 @@ const defaultInventory: PlayerInventory = {
     consumables: {},
     upgrades: {},
     cosmetics: [],
-    activeTheme: 'default',
+    activeTheme: 'quantum-foam',
 };
 
 export const savePlayerInventory = (inventory: PlayerInventory): void => {

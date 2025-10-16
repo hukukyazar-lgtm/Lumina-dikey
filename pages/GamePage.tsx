@@ -4,16 +4,17 @@ import LetterCircle from '../components/LetterCircle';
 import ChoiceButton from '../components/ChoiceButton';
 import Scoreboard from '../components/Scoreboard';
 import MoneyDisplay from '../components/MoneyDisplay';
-import CorrectWordDisplay from '../components/CorrectWordDisplay';
 import LoadingSpinner from '../components/LoadingSpinner';
 import BonusProgressIndicator from '../components/BonusProgressIndicator';
 import LifeBonusIndicator from '../components/LifeBonusIndicator';
 import CountdownDisplay from '../components/CountdownDisplay';
 import Timer from '../components/Timer';
+import FeedbackText from '../components/CorrectWordDisplay';
 import { useLanguage } from '../components/LanguageContext';
 import { MEMORY_GAME_INTERVAL, difficultySettings, difficultyEmojis, ENDLESS_TIMER } from '../config';
 import EndlessHighScoreDisplay from '../components/EndlessHighScoreDisplay';
 import Logo from '../components/Logo';
+import GoldCoinIcon from '../components/GoldCoinIcon';
 
 interface GamePageProps {
   gameStatus: GameStatus;
@@ -44,6 +45,7 @@ interface GamePageProps {
   activeTheme: string;
   customGameBackgroundUrl: string | null;
   customButtonTextureUrl: string | null;
+  customCubeTextureUrl: string | null;
 }
 
 interface FlyingCoin {
@@ -82,6 +84,7 @@ const GamePage: React.FC<GamePageProps> = ({
   activeTheme,
   customGameBackgroundUrl,
   customButtonTextureUrl,
+  customCubeTextureUrl,
 }) => {
   const { t } = useLanguage();
   const [displayLives, setDisplayLives] = useState(lives);
@@ -89,6 +92,7 @@ const GamePage: React.FC<GamePageProps> = ({
   const prevStreakRef = useRef(consecutiveCorrectAnswers);
   const [flyingCoins, setFlyingCoins] = useState<FlyingCoin[]>([]);
   const choiceButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+// FIX: Initialize useRef with null instead of an empty array to match the ref's type.
   const moneyDisplayRef = useRef<HTMLDivElement | null>(null);
 
 
@@ -178,12 +182,11 @@ const GamePage: React.FC<GamePageProps> = ({
   }, [consecutiveCorrectAnswers]);
 
   const getChoiceStatus = (word: string): 'correct' | 'incorrect' | 'default' => {
-    if (!selectedChoice) return 'default';
-    if (word === wordChallenge.correctWord && (selectedChoice === word || gameStatus === 'incorrect')) {
-      return 'correct';
+    if (!selectedChoice) {
+      return 'default';
     }
-    if (word !== wordChallenge.correctWord && selectedChoice === word) {
-      return 'incorrect';
+    if (selectedChoice === word) {
+      return word === wordChallenge.correctWord ? 'correct' : 'incorrect';
     }
     return 'default';
   };
@@ -209,7 +212,7 @@ const GamePage: React.FC<GamePageProps> = ({
           return (
               <div
                   key={coin.id}
-                  className="fixed text-2xl z-50 pointer-events-none animate-fly-to-corner"
+                  className="fixed z-50 pointer-events-none animate-fly-to-corner"
                   style={{
                       left: `${coin.startX}px`,
                       top: `${coin.startY}px`,
@@ -218,7 +221,7 @@ const GamePage: React.FC<GamePageProps> = ({
                   } as React.CSSProperties}
                   onAnimationEnd={() => setFlyingCoins(prev => prev.filter(c => c.id !== coin.id))}
               >
-                  <span>☄️</span>
+                  <GoldCoinIcon className="w-6 h-6" />
               </div>
           );
       })}
@@ -256,13 +259,13 @@ const GamePage: React.FC<GamePageProps> = ({
             <div className="flex-1 flex justify-center">
               {gameMode === 'progressive' && (
                 <div className="flex flex-col items-center justify-center text-center">
-                  <div className="text-lg font-bold text-brand-light/80">{t('levelAbbr')} {level}</div>
+                  <div className="text-lg font-black text-brand-light/80">{t('levelAbbr')} {level}</div>
                   <div className="text-2xl -mt-1">{difficultyEmojis[difficulty]}</div>
                 </div>
               )}
               {gameMode === 'practice' && (
                 <div className="flex flex-col items-center justify-center text-center">
-                  <div className="text-lg font-bold text-brand-light/80">{t(difficulty.toLowerCase() as any)}</div>
+                  <div className="text-lg font-black text-brand-light/80">{t(difficulty.toLowerCase() as any)}</div>
                   <div className="text-2xl -mt-1">{difficultyEmojis[difficulty]}</div>
                 </div>
               )}
@@ -273,8 +276,8 @@ const GamePage: React.FC<GamePageProps> = ({
               {gameMode === 'progressive' && <Scoreboard score={score} />}
               {gameMode === 'practice' && (
                 <div className={`h-10 flex items-center justify-center bg-gradient-to-br from-brand-secondary/50 to-brand-primary/50 border-brand-light/10 backdrop-blur-sm border px-4 shadow-bevel-inner rounded-lg`}>
-                  <span className="text-sm sm:text-base font-semibold text-brand-light/80 mr-2">{t('correctStreak')}</span>
-                  <span className={`text-lg sm:text-xl font-bold text-brand-accent-secondary w-8 text-left transition-transform ${isStreakAnimating ? 'animate-score-pop' : ''}`}>
+                  <span className="text-sm sm:text-base font-black text-brand-light/80 mr-2">{t('correctStreak')}</span>
+                  <span className={`text-lg sm:text-xl font-black text-brand-accent-secondary w-8 text-left transition-transform ${isStreakAnimating ? 'animate-score-pop' : ''}`}>
                     {consecutiveCorrectAnswers}
                   </span>
                 </div>
@@ -321,16 +324,14 @@ const GamePage: React.FC<GamePageProps> = ({
                     activeTheme={activeTheme}
                     isSpecialCube={isSpecialCube}
                     isExiting={isFeedbackState}
+                    customCubeTextureUrl={customCubeTextureUrl}
+                    showCorrectAnimation={gameStatus === 'correct'}
+                    showIncorrectAnimation={gameStatus === 'incorrect'}
                 />
             </div>
-            {isFeedbackState && (
-                <CorrectWordDisplay
-                    word={wordChallenge.correctWord}
-                    isCorrect={gameStatus === 'correct'}
-                />
-            )}
             {/* Countdown Display is also an overlay */}
             <CountdownDisplay value={countdownDisplay} />
+            <FeedbackText status={gameStatus} />
         </div>
       </main>
 
@@ -361,12 +362,12 @@ const GamePage: React.FC<GamePageProps> = ({
 
       {isPaused && (gameStatus === 'playing' || gameStatus === 'countdown') && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-brand-bg/90 backdrop-blur-md z-30 animate-appear">
-          <h2 className="text-3xl font-extrabold text-brand-light/80 mb-8 animate-pulse-slow">{t('paused')}</h2>
+          <h2 className="text-3xl font-black text-brand-light/80 mb-8 animate-pulse-slow">{t('paused')}</h2>
           <div className="flex flex-col gap-4 w-full max-w-xs">
             <button
               onClick={togglePause}
               aria-label={t('continue')}
-              className="w-full text-center text-lg sm:text-xl font-bold p-3 rounded-full flex items-center justify-center gap-2 transform transition-all duration-150 ease-in-out backdrop-blur-sm shadow-bevel-inner border focus:outline-none text-white bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)] hover:bg-brand-accent-secondary hover:shadow-[0_6px_0_var(--brand-accent-secondary-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-secondary-shadow)]"
+              className="w-full text-center text-lg sm:text-xl font-black p-3 rounded-full flex items-center justify-center gap-2 transform transition-all duration-150 ease-in-out backdrop-blur-sm shadow-bevel-inner border focus:outline-none text-white bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)] hover:bg-brand-accent-secondary hover:shadow-[0_6px_0_var(--brand-accent-secondary-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-secondary-shadow)]"
             >
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M8 5v14l11-7z"></path>
@@ -375,7 +376,7 @@ const GamePage: React.FC<GamePageProps> = ({
             </button>
             <button
               onClick={handleMenuReturn}
-              className="w-full text-center text-lg sm:text-xl font-bold p-3 rounded-full flex items-center justify-center gap-2 transform transition-all duration-150 ease-in-out backdrop-blur-sm shadow-bevel-inner border focus:outline-none text-brand-light bg-brand-warning/50 border-brand-warning/80 shadow-[0_4px_0_var(--brand-warning-shadow)] hover:bg-brand-warning/70 hover:shadow-[0_6px_0_var(--brand-warning-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-warning-shadow)]"
+              className="w-full text-center text-lg sm:text-xl font-black p-3 rounded-full flex items-center justify-center gap-2 transform transition-all duration-150 ease-in-out backdrop-blur-sm shadow-bevel-inner border focus:outline-none text-brand-light bg-brand-warning/50 border-brand-warning/80 shadow-[0_4px_0_var(--brand-warning-shadow)] hover:bg-brand-warning/70 hover:shadow-[0_6px_0_var(--brand-warning-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-warning-shadow)]"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
               {t('returnToMenu')}

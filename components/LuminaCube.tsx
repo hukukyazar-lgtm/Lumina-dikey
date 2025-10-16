@@ -51,10 +51,10 @@ const LuminaCube: React.FC<LuminaCubeProps> = ({
           }}
         >
           <span
-            className={`font-extrabold ${face.color}`}
+            className={`font-black ${face.color}`}
             style={{
               fontSize: `${contentSize}px`,
-              textShadow: `0 0 8px currentColor, 0 0 16px currentColor`,
+              textShadow: 'none',
               transform: face.letter === 'M' ? 'rotateY(180deg)' : 'none',
             }}
           >

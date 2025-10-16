@@ -13,7 +13,7 @@ const WordTile: React.FC<WordTileProps> = ({ word, onClick, status, style }) => 
   const baseClasses = `
     px-4 sm:px-5 py-2 sm:py-3 rounded-full cursor-pointer transition-all duration-200
     backdrop-blur-sm shadow-bevel-inner border text-center
-    text-lg sm:text-xl font-bold text-brand-light shadow-[0_5px_15px_rgba(0,0,0,0.3)]
+    text-lg sm:text-xl font-black text-brand-light shadow-[0_5px_15px_rgba(0,0,0,0.3)]
   `;
 
   const defaultBgClasses = 'bg-gradient-to-br from-white/10 to-white/5 hover:from-white/20 hover:to-white/10';
