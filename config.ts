@@ -1,5 +1,6 @@
 
 
+
 import { Difficulty, WordLength, Achievement, ShopItem } from './types';
 
 export const difficultySettings: Record<Difficulty, { wordLength: WordLength, timer: number, baseAnimationDuration: number }> = {
@@ -59,6 +60,40 @@ export const PRACTICE_MODE_UNLOCK_SCORE = 30;
 export const DUEL_MODE_UNLOCK_SCORE = 60;
 export const ADVENTURE_MODE_UNLOCK_SCORE = 120;
 
+const glassCubeColorPalettes = [
+  {
+    '--cube-face-bg': 'rgba(71, 85, 105, 0.4)',
+    '--cube-face-border': 'rgba(6, 182, 212, 0.5)',
+    '--cube-face-text-color': '#06b6d4',
+    '--cube-face-text-shadow': '0 0 15px rgba(6, 182, 212, 0.6)',
+  },
+  {
+    '--cube-face-bg': 'rgba(139, 92, 246, 0.3)',
+    '--cube-face-border': 'rgba(139, 92, 246, 0.5)',
+    '--cube-face-text-color': '#c4b5fd',
+    '--cube-face-text-shadow': '0 0 15px rgba(139, 92, 246, 0.6)',
+  },
+  {
+    '--cube-face-bg': 'rgba(16, 185, 129, 0.3)',
+    '--cube-face-border': 'rgba(16, 185, 129, 0.5)',
+    '--cube-face-text-color': '#86efac',
+    '--cube-face-text-shadow': '0 0 15px rgba(16, 185, 129, 0.6)',
+  },
+  {
+    '--cube-face-bg': 'rgba(236, 72, 153, 0.3)',
+    '--cube-face-border': 'rgba(236, 72, 153, 0.5)',
+    '--cube-face-text-color': '#f472b6',
+    '--cube-face-text-shadow': '0 0 15px rgba(236, 72, 153, 0.6)',
+  },
+  {
+    '--cube-face-bg': 'rgba(251, 146, 60, 0.3)',
+    '--cube-face-border': 'rgba(251, 146, 60, 0.5)',
+    '--cube-face-text-color': '#fed7aa',
+    '--cube-face-text-shadow': '0 0 15px rgba(251, 146, 60, 0.6)',
+  },
+];
+
+
 // NEW: Cube color palettes for randomization
 export const cubeColorPalettes = [
   { // Default/Quantum Play
@@ -109,6 +144,7 @@ export const cubeColorPalettes = [
     '--cube-face-text-color': '#FFFFFF',
     '--cube-face-text-shadow': '0 0 12px #FFFFFF',
   },
+  ...glassCubeColorPalettes,
 ];
 
 // NEW: Definitive cube styles library
@@ -440,6 +476,30 @@ export const shopItems: ShopItem[] = [
         category: 'cosmetics',
         icon: '🫧',
         price: 2500,
+    },
+    {
+        id: 'theme-glass-dark',
+        nameKey: 'item_theme_glass_dark_name',
+        descriptionKey: 'item_theme_glass_dark_desc',
+        category: 'cosmetics',
+        icon: '🧊',
+        price: 3000,
+    },
+    {
+        id: 'theme-glass-light',
+        nameKey: 'item_theme_glass_light_name',
+        descriptionKey: 'item_theme_glass_light_desc',
+        category: 'cosmetics',
+        icon: '☀️',
+        price: 3000,
+    },
+    {
+        id: 'theme-glass-neon',
+        nameKey: 'item_theme_glass_neon_name',
+        descriptionKey: 'item_theme_glass_neon_desc',
+        category: 'cosmetics',
+        icon: '⚡️',
+        price: 4000,
     },
 ];
 

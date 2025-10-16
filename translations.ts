@@ -240,6 +240,12 @@ export const translations = {
     item_theme_crystal_palace_desc: "An elegant theme of translucent, light-refracting crystals.",
     item_theme_quantum_foam_name: "Quantum Foam Theme",
     item_theme_quantum_foam_desc: "An abstract theme of iridescent, shifting energy fields.",
+    item_theme_glass_dark_name: "Glass Theme (Dark)",
+    item_theme_glass_dark_desc: "A sleek, dark interface with frosted glass elements.",
+    item_theme_glass_light_name: "Glass Theme (Light)",
+    item_theme_glass_light_desc: "A bright, clean interface with translucent glass elements.",
+    item_theme_glass_neon_name: "Glass Theme (Neon)",
+    item_theme_glass_neon_desc: "A vibrant, retro-futuristic theme with glowing glass.",
 
     // Design Studio
     designStudio: "Design Studio",
@@ -561,6 +567,12 @@ export const translations = {
     item_theme_crystal_palace_desc: "Yarı saydam, ışığı kıran kristallerden oluşan zarif bir tema.",
     item_theme_quantum_foam_name: "Kuantum Köpüğü Teması",
     item_theme_quantum_foam_desc: "Yanardöner, şekil değiştiren enerji alanlarından oluşan soyut bir tema.",
+    item_theme_glass_dark_name: "Cam Tema (Koyu)",
+    item_theme_glass_dark_desc: "Buzlu cam öğeleri içeren şık, karanlık bir arayüz.",
+    item_theme_glass_light_name: "Cam Tema (Açık)",
+    item_theme_glass_light_desc: "Yarı saydam cam öğeleri içeren aydınlık, temiz bir arayüz.",
+    item_theme_glass_neon_name: "Cam Tema (Neon)",
+    item_theme_glass_neon_desc: "Parlayan cam öğeleri içeren canlı, retro-fütüristik bir tema.",
     
     // Design Studio
     designStudio: "Tasarım Stüdyosu",
