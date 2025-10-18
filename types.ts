@@ -124,3 +124,46 @@ export interface JourneyItem {
     imageUrl?: string;
     backgroundSize?: string;
 }
+
+// NEW Type for button structure generation
+export interface ButtonStructure {
+    borderRadius: number;
+    shadowDepth: number;
+    highlightIntensity: number;
+    surface: 'matte' | 'glossy' | 'metallic';
+}
+
+// NEW Type for theme generation
+export type ThemePalette = {
+  '--brand-bg-gradient-start': string;
+  '--brand-bg-gradient-end': string;
+  '--brand-primary': string;
+  '--brand-secondary': string;
+  '--brand-light': string;
+  '--brand-accent': string;
+  '--brand-accent-secondary': string;
+  '--brand-warning': string;
+  '--brand-correct': string;
+  '--brand-tertiary': string;
+  '--brand-quaternary': string;
+  '--brand-accent-shadow': string;
+  '--brand-accent-secondary-shadow': string;
+  '--brand-warning-shadow': string;
+  '--brand-correct-shadow': string;
+  '--shadow-color-strong': string;
+  '--bevel-shadow-dark': string;
+  '--bevel-shadow-light': string;
+  '--brand-accent-secondary-glow': string;
+  '--brand-accent-glow': string;
+  '--brand-warning-glow': string;
+  // Background-specific properties
+  '--background-image-override'?: string;
+  // Cube-specific properties
+  '--cube-face-bg': string;
+  '--cube-face-border': string;
+  '--cube-face-text-color': string;
+  '--cube-face-text-shadow': string;
+  '--cube-face-extra-animation'?: string;
+  // Add new glassmorphism variables to the type
+  [key: string]: string | undefined;
+};

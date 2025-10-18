@@ -1,5 +1,5 @@
 import { GoogleGenAI, Modality, Type } from "@google/genai";
-import type { WordChallenge, WordLength, Language } from '../types';
+import type { WordChallenge, WordLength, Language, ButtonStructure, ThemePalette } from '../types';
 import { turkishWordList, englishWordList } from './wordList';
 
 const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
@@ -197,7 +197,7 @@ Generate the detailed prompt now.`;
 
 
 // NEW function to generate button structure from a text description
-export const generateButtonStructureFromPrompt = async (description: string): Promise<any> => {
+export const generateButtonStructureFromPrompt = async (description: string): Promise<ButtonStructure> => {
     try {
         const metaPrompt = `You are a UI design assistant. Your task is to interpret a user's description of a button style and map it to a set of specific design parameters. The user's description is "${description}". Respond with a JSON object that strictly adheres to the provided schema.`;
 
@@ -237,5 +237,59 @@ export const generateButtonStructureFromPrompt = async (description: string): Pr
     } catch (error) {
         console.error("Error generating button structure with Gemini:", error);
         throw new Error("Button structure generation failed.");
+    }
+};
+
+// NEW function to generate a UI theme from a text description
+export const generateThemeFromPrompt = async (description: string): Promise<ThemePalette> => {
+    try {
+        const metaPrompt = `You are an expert UI/UX and theme designer. Your task is to interpret a user's description of a UI theme and generate a complete color palette and style configuration for a web application. The user's description is "${description}". Respond with a JSON object that strictly adheres to the provided schema. Ensure the color palette is cohesive, aesthetically pleasing, and maintains good contrast for readability.`;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: metaPrompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        '--brand-bg-gradient-start': { type: Type.STRING, description: 'Start color of the main background gradient (hex or rgba).' },
+                        '--brand-bg-gradient-end': { type: Type.STRING, description: 'End color of the main background gradient (hex or rgba).' },
+                        '--brand-primary': { type: Type.STRING, description: 'Primary container background color, often semi-transparent (rgba).' },
+                        '--brand-secondary': { type: Type.STRING, description: 'Secondary container background color, often semi-transparent and lighter/darker than primary (rgba).' },
+                        '--brand-light': { type: Type.STRING, description: 'The primary color for text and light UI elements (hex).' },
+                        '--brand-accent': { type: Type.STRING, description: 'The primary accent color, used for important interactive elements, highlights, and warnings (hex).' },
+                        '--brand-accent-secondary': { type: Type.STRING, description: 'A secondary accent color that contrasts well with the primary accent (hex).' },
+                        '--brand-warning': { type: Type.STRING, description: 'A color used for warnings or time-running-out indicators (hex).' },
+                        '--brand-correct': { type: Type.STRING, description: 'A color used to indicate a correct answer or success (hex).' },
+                        '--brand-tertiary': { type: Type.STRING, description: 'A lighter shade of the primary accent color.' },
+                        '--brand-quaternary': { type: Type.STRING, description: 'A lighter shade of the secondary accent color.' },
+                        '--brand-accent-shadow': { type: Type.STRING, description: 'A darker shade of the primary accent color, used for shadows.' },
+                        '--brand-accent-secondary-shadow': { type: Type.STRING, description: 'A darker shade of the secondary accent color, used for shadows.' },
+                        '--brand-warning-shadow': { type: Type.STRING, description: 'A darker shade of the warning color, used for shadows.' },
+                        '--brand-correct-shadow': { type: Type.STRING, description: 'A darker shade of the correct color, used for shadows.' },
+                        '--shadow-color-strong': { type: Type.STRING, description: 'A general-purpose dark, semi-transparent color for strong inner shadows (rgba).' },
+                        '--bevel-shadow-dark': { type: Type.STRING, description: 'A dark, subtle color for creating a 3D bevel effect (rgba).' },
+                        '--bevel-shadow-light': { type: Type.STRING, description: 'A light, subtle color for creating a 3D bevel effect (rgba).' },
+                        '--brand-accent-secondary-glow': { type: Type.STRING, description: 'A semi-transparent version of the secondary accent color for creating glow effects (rgba).' },
+                        '--brand-accent-glow': { type: Type.STRING, description: 'A semi-transparent version of the primary accent color for creating glow effects (rgba).' },
+                        '--brand-warning-glow': { type: Type.STRING, description: 'A semi-transparent version of the warning color for creating glow effects (rgba).' },
+                        '--background-image-override': { type: Type.STRING, description: 'Optional. A complex CSS background-image value (e.g., multiple radial-gradients) to override the default linear gradient. Use "none" if not applicable.' },
+                        '--cube-face-bg': { type: Type.STRING, description: 'Background color/gradient for the faces of the 3D letter cubes.' },
+                        '--cube-face-border': { type: Type.STRING, description: 'Border color for the 3D letter cubes.' },
+                        '--cube-face-text-color': { type: Type.STRING, description: 'Text color for the 3D letter cubes.' },
+                        '--cube-face-text-shadow': { type: Type.STRING, description: 'Text shadow for the 3D letter cubes to enhance readability.' },
+                        '--cube-face-extra-animation': { type: Type.STRING, description: 'Optional. A CSS animation name for extra effects on cube faces. Use "none" if not applicable.' }
+                    },
+                },
+            },
+        });
+
+        const jsonStr = response.text.trim();
+        return JSON.parse(jsonStr);
+
+    } catch (error) {
+        console.error("Error generating theme with Gemini:", error);
+        throw new Error("Theme generation failed.");
     }
 };

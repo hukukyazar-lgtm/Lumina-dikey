@@ -325,6 +325,12 @@ export const translations = {
     generateStyle: "Generate Style",
     generatingStyle: "Generating Style...",
     styleGenError: "Failed to generate style. Please try a different description.",
+    uiStitch: "UI Stitch",
+    uiStitchDesc: "Use Gemini to generate a unique UI theme from a text description.",
+    generateTheme: "Generate Theme",
+    applyTheme: "Apply Theme",
+    themePromptPlaceholder: "Describe your theme, e.g., 'a dark, cyberpunk theme with neon pink and blue'",
+    themeGenError: "Failed to generate theme. Please try again.",
   },
   tr: {
     // Language Selector (now in settings)
@@ -652,5 +658,11 @@ export const translations = {
     generateStyle: "Stil Oluştur",
     generatingStyle: "Stil Oluşturuluyor...",
     styleGenError: "Stil oluşturulamadı. Lütfen farklı bir tanım deneyin.",
+    uiStitch: "Arayüz Dikişi",
+    uiStitchDesc: "Metin açıklamasından benzersiz bir UI teması oluşturmak için Gemini'yi kullanın.",
+    generateTheme: "Tema Oluştur",
+    applyTheme: "Temayı Uygula",
+    themePromptPlaceholder: "Temanızı açıklayın, örn., 'neon pembe ve mavi vurgulara sahip karanlık bir siberpunk teması'",
+    themeGenError: "Tema oluşturulamadı. Lütfen tekrar deneyin.",
   },
 };

@@ -14,14 +14,14 @@ import ConfirmationModal from './components/ConfirmationModal';
 import LeaderboardPage from './pages/LeaderboardPage';
 import ProfilePage from './pages/ProfilePage';
 import ShopPage from './pages/ShopPage';
-import DesignStudioPage from './pages/ImageStudioPage';
+import DesignStudioPage from './pages/DesignStudioPage';
 import { useLanguage } from './components/LanguageContext';
 import { useThemeManager } from './hooks/useThemeManager';
 import { fetchWordChallenge } from './services/geminiService';
 import { saveLocalHighScore } from './services/scoreService';
 import { soundService } from './services/soundService';
-import { saveGuestProgress, loadGuestProgress, clearGuestProgress, saveEndlessHighScore, loadEndlessHighScore, saveEndlessProgress, loadEndlessProgress, clearEndlessProgress, saveTotalMoney, loadTotalMoney, loadPlayerProfile, savePlayerProfile, loadPlayerInventory, savePlayerInventory, saveCustomPlanetImages, loadCustomPlanetImages, saveCustomGameBackground, loadCustomGameBackground, saveCustomButtonTexture, loadCustomButtonTexture, saveCustomMenuBackground, loadCustomMenuBackground, loadCustomButtonStructure, saveCustomCubeStyle, loadCustomCubeStyle, saveCustomCubeTexture, loadCustomCubeTexture } from './services/progressService';
-import type { GameStatus, WordChallenge, Difficulty, LevelProgress, GameMode, WordLength, SavedProgress, SavedEndlessState, PlayerProfile, AchievementConditionState, PlayerInventory } from './types';
+import { saveGuestProgress, loadGuestProgress, clearGuestProgress, saveEndlessHighScore, loadEndlessHighScore, saveEndlessProgress, loadEndlessProgress, clearEndlessProgress, saveTotalMoney, loadTotalMoney, loadPlayerProfile, savePlayerProfile, loadPlayerInventory, savePlayerInventory, saveCustomPlanetImages, loadCustomPlanetImages, saveCustomGameBackground, loadCustomGameBackground, saveCustomButtonTexture, loadCustomButtonTexture, saveCustomMenuBackground, loadCustomMenuBackground, loadCustomButtonStructure, saveCustomCubeStyle, loadCustomCubeStyle, saveCustomCubeTexture, loadCustomCubeTexture, saveCustomTheme } from './services/progressService';
+import type { GameStatus, WordChallenge, Difficulty, LevelProgress, GameMode, WordLength, SavedProgress, SavedEndlessState, PlayerProfile, AchievementConditionState, PlayerInventory, ThemePalette } from './types';
 import { difficultySettings, LIFE_BONUS_INTERVAL, STARTING_LIVES, MEMORY_GAME_INTERVAL, MAX_LIVES, difficultyProgression, difficultyPoints, ENDLESS_TIMER, difficultyAnimations, planetImageUrls, ADVENTURE_GATEWAYS_PER_PLANET, planetBackgroundSizes, achievements, shopItems, cubeColorPalettes, cubeStyles } from './config';
 // FIX: Import the 'themes' object to apply cosmetic theme styles to game elements.
 import { themes } from './themes';
@@ -479,6 +479,11 @@ export default function App() {
         updatePlayerInventory(inv => ({...inv, activeTheme: themeId}));
     }, [updatePlayerInventory]);
 
+    const handleSetCustomTheme = useCallback((theme: ThemePalette) => {
+        saveCustomTheme(theme);
+        handleEquipTheme('custom-generated');
+    }, [handleEquipTheme]);
+
     useEffect(() => {
         if (gameStatus === 'intro') {
             const timer = setTimeout(() => {
@@ -835,6 +840,7 @@ export default function App() {
                 onSetCustomCubeTexture={handleSetCustomCubeTexture}
                 onSetCustomCubeStyle={handleSetCustomCubeStyle}
                 activeCubeStyle={activeCubeStyle}
+                onSetCustomTheme={handleSetCustomTheme}
             />;
         case 'practiceMenu':
              return (

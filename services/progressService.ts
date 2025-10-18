@@ -1,4 +1,4 @@
-import type { SavedProgress, SavedEndlessState, PlayerProfile, PlayerInventory } from '../types';
+import type { SavedProgress, SavedEndlessState, PlayerProfile, PlayerInventory, ThemePalette } from '../types';
 
 const GUEST_PROGRESS_KEY = 'lumina-guest-progress';
 const ENDLESS_HIGH_SCORE_KEY = 'lumina-endless-high-score';
@@ -14,6 +14,26 @@ const CUSTOM_CUBE_TEXTURE_KEY = 'lumina-custom-cube-texture'; // New key
 const CUSTOM_BUTTON_STRUCTURE_KEY = 'lumina-custom-button-structure';
 const CUSTOM_CUBE_STYLE_KEY = 'lumina-custom-cube-style'; // New key
 const CUSTOM_GENERATED_IMAGES_KEY = 'lumina-generated-images';
+const CUSTOM_THEME_KEY = 'lumina-custom-theme'; // New key
+
+// --- Custom Theme --- (NEW)
+export const saveCustomTheme = (theme: ThemePalette): void => {
+    try {
+        localStorage.setItem(CUSTOM_THEME_KEY, JSON.stringify(theme));
+    } catch (error) {
+        console.error("Failed to save custom theme:", error);
+    }
+};
+
+export const loadCustomTheme = (): ThemePalette | null => {
+    try {
+        const data = localStorage.getItem(CUSTOM_THEME_KEY);
+        return data ? JSON.parse(data) : null;
+    } catch (error) {
+        console.error("Failed to load custom theme:", error);
+        return null;
+    }
+};
 
 
 // --- Custom Cube Style --- (NEW)
