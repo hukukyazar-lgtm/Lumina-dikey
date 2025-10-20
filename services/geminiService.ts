@@ -2,7 +2,9 @@ import { GoogleGenAI, Modality, Type } from "@google/genai";
 import type { WordChallenge, WordLength, Language, ButtonStructure, ThemePalette } from '../types';
 import { turkishWordList, englishWordList } from './wordList';
 
-const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+// Prefer a specific env var for Gemini API keys; keep a fallback for backwards compatibility.
+const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
+const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
 
 // Helper to shuffle an array
 const shuffleArray = <T,>(array: T[]): T[] => {
