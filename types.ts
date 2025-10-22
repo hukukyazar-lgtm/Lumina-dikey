@@ -49,6 +49,7 @@ export interface HighScore {
 
 export interface SavedEndlessState {
     gameMoney: number;
+    endlessScore: number;
     endlessWordCount: number;
     roundCount: number;
     memoryGameWordData: Array<{ word: string; score: number }>;
@@ -167,3 +168,6 @@ export type ThemePalette = {
   // Add new glassmorphism variables to the type
   [key: string]: string | undefined;
 };
+
+// NEW Type for difficulty-based game backgrounds
+export type GameBackgrounds = Record<'easy' | 'medium' | 'hard', string | null>;

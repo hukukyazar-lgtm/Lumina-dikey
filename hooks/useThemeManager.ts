@@ -18,19 +18,12 @@ export const useThemeManager = (activeTheme: string) => {
 
     // Set all CSS variables from the theme object
     Object.entries(theme).forEach(([key, value]) => {
-      // FIX: Ensure value is not undefined before setting the property.
-      if (value) {
+      // FIX: Use a `typeof` check as a type guard to satisfy TypeScript that `value` is a string.
+      // This correctly handles `undefined` values from the theme object and allows empty strings.
+      if (typeof value === 'string') {
         root.style.setProperty(key, value);
       }
     });
-
-    // Handle special case for background image
-    if (theme['--background-image-override'] && theme['--background-image-override'] !== 'none') {
-        document.body.style.backgroundImage = theme['--background-image-override'];
-    } else {
-        // Fallback to gradient if no override is present
-        document.body.style.backgroundImage = `linear-gradient(135deg, ${theme['--brand-bg-gradient-start']} 0%, ${theme['--brand-bg-gradient-end']} 100%)`;
-    }
 
   }, [activeTheme]);
 };

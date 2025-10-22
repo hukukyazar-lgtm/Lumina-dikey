@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { useLanguage } from './LanguageContext';
 import { GameStatus } from '../types';
 
@@ -9,24 +10,24 @@ interface FeedbackTextProps {
 const FeedbackText: React.FC<FeedbackTextProps> = ({ status }) => {
   const { t } = useLanguage();
 
-  if (status !== 'correct' && status !== 'incorrect') {
-    return null;
-  }
-
   const isCorrect = status === 'correct';
   const text = isCorrect ? t('feedbackCorrect') : t('feedbackIncorrect');
   const colorClass = isCorrect ? 'text-brand-correct' : 'text-brand-accent';
   const shadowClass = isCorrect ? 'drop-shadow-[0_0_15px_var(--brand-correct-glow)]' : 'drop-shadow-[0_0_15px_var(--brand-accent-glow)]';
 
   return (
-    <div className="absolute inset-x-0 bottom-[25%] flex justify-center pointer-events-none z-20">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.7, y: 50 }}
+      animate={{ opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
+      exit={{ opacity: 0, scale: 1.3, y: -20, transition: { duration: 0.3 } }}
+      className="absolute inset-x-0 bottom-[25%] flex justify-center pointer-events-none z-20"
+    >
       <div
-        key={text} // Re-trigger animation on text change
-        className={`text-6xl font-black animate-grow-and-fade-text ${colorClass} ${shadowClass}`}
+        className={`text-6xl font-black ${colorClass} ${shadowClass}`}
       >
         {text}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

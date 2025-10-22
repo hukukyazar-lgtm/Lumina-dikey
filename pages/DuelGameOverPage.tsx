@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLanguage } from '../components/LanguageContext';
 import { soundService } from '../services/soundService';
+import PressableButton from '../components/PressableButton';
 
 interface DuelGameOverPageProps {
     winner: 1 | 2 | 'draw' | null;
@@ -62,32 +63,12 @@ const DuelGameOverPage: React.FC<DuelGameOverPageProps> = ({ winner, player1Roun
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
-                    <button
-                        onClick={handleReturnClick}
-                        className="
-                            w-full text-center text-lg sm:text-xl font-black p-3 rounded-full
-                            transform transition-all duration-150 ease-in-out
-                            backdrop-blur-sm shadow-bevel-inner border focus:outline-none text-brand-light
-                            bg-brand-secondary border-brand-light/20 shadow-[0_4px_0_var(--bevel-shadow-dark)]
-                            hover:bg-brand-light/10 hover:shadow-[0_6px_0_var(--bevel-shadow-dark)]
-                            active:translate-y-1 active:shadow-[0_2px_0_var(--bevel-shadow-dark)]
-                        "
-                    >
-                        {t('returnToMenu')}
-                    </button>
-                    <button
-                        onClick={handlePlayAgainClick}
-                        className="
-                            w-full text-center text-lg sm:text-xl font-black p-3 rounded-full
-                            transform transition-all duration-150 ease-in-out
-                            backdrop-blur-sm shadow-bevel-inner border text-brand-bg focus:outline-none
-                            bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)]
-                            hover:bg-brand-accent-secondary hover:shadow-[0_6px_0_var(--brand-accent-secondary-shadow)]
-                            active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-secondary-shadow)]
-                        "
-                    >
-                        {t('playAgain')}
-                    </button>
+                    <PressableButton onClick={handleReturnClick} color="primary" className="w-full">
+                        <span>{t('returnToMenu')}</span>
+                    </PressableButton>
+                    <PressableButton onClick={handlePlayAgainClick} color="secondary" className="w-full">
+                        <span>{t('playAgain')}</span>
+                    </PressableButton>
                 </div>
             </div>
         </div>

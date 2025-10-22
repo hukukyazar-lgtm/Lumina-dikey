@@ -62,6 +62,8 @@ const PlayerInterface: React.FC<PlayerInterfaceProps> = ({ playerNumber, score, 
                         onClick={(w) => onChoice(w, playerNumber)}
                         disabled={isDisabled}
                         status={'default'}
+                        revealPercentage={100}
+                        revealDirection="easy"
                     />
                 ))}
             </div>

@@ -5,6 +5,7 @@ import { soundService } from '../services/soundService';
 import { GameMode } from '../types';
 import { ADVENTURE_GATEWAYS_PER_PLANET, planetNameTranslationKeys } from '../config';
 import GoldCoinIcon from './GoldCoinIcon';
+import PressableButton from './PressableButton';
 
 interface MemoryGameProps {
   wordsToFind: Array<{ word: string; score: number }>;
@@ -176,21 +177,6 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ wordsToFind, allChoices, onClos
     onFailure();
   };
 
-  const passButtonClasses = `
-    w-full max-w-xs text-center text-xl sm:text-2xl font-black p-4 rounded-full
-    transform transition-all duration-150 ease-in-out
-    backdrop-blur-sm shadow-bevel-inner border text-brand-light focus:outline-none`;
-
-  const wonButtonClasses = `
-    bg-brand-accent-secondary/50 border-brand-accent-secondary/80 shadow-[0_4px_0_var(--brand-accent-secondary-shadow)]
-    hover:bg-brand-accent-secondary/70 hover:shadow-[0_6px_0_var(--brand-accent-secondary-shadow)]
-    active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-secondary-shadow)]`;
-  
-  const lostButtonClasses = `
-    bg-brand-accent/50 border-brand-accent/80 shadow-[0_4px_0_var(--brand-accent-shadow)]
-    hover:bg-brand-accent/70 hover:shadow-[0_6px_0_var(--brand-accent-shadow)]
-    active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-shadow)]`;
-
   return (
     <div className="fixed inset-0 bg-brand-bg/90 backdrop-blur-md z-50 flex items-center justify-center animate-appear p-2 sm:p-4">
       <div className={`w-full max-w-5xl h-full max-h-[90vh] bg-brand-primary backdrop-blur-sm border-2 border-brand-accent rounded-2xl shadow-2xl shadow-brand-accent/20 p-2 sm:p-6 flex flex-col`}>
@@ -235,44 +221,46 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ wordsToFind, allChoices, onClos
         
         <div className="mt-6 flex justify-center">
             {!gameWon && !gameLost && (
-                <button
+                <PressableButton
                     onClick={handleConfirmSelection}
                     disabled={selectedWords.size !== wordsToFind.length}
-                    className={`
-                        ${passButtonClasses}
-                        ${selectedWords.size !== wordsToFind.length
-                            ? 'bg-gray-600/50 border-gray-500/80 shadow-none cursor-not-allowed'
-                            : 'bg-brand-correct/50 border-brand-correct/80 shadow-[0_4px_0_var(--brand-correct-shadow)] hover:bg-brand-correct/70 hover:shadow-[0_6px_0_var(--brand-correct-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-correct-shadow)]'
-                        }
-                    `}
+                    color={selectedWords.size === wordsToFind.length ? 'correct' : 'primary'}
+                    className="w-full max-w-xs"
+                    size="large"
                 >
-                    {t('continue')} ({selectedWords.size}/{wordsToFind.length})
-                </button>
+                    <span>{t('continue')} ({selectedWords.size}/{wordsToFind.length})</span>
+                </PressableButton>
             )}
             {gameWon && (
-                <button
+                <PressableButton
                     onClick={handleSuccessContinue}
-                    className={`${passButtonClasses} ${wonButtonClasses} animate-appear`}
+                    color="secondary"
+                    className="w-full max-w-xs animate-appear"
+                    size="large"
                 >
-                    {gameMode === 'progressive' ? (
-                        t('continueWithBonus', { bonusScore })
-                    ) : (
-                        <>
-                            {t('continue')}{' '}
-                            <span className="inline-flex items-center">
-                                ({bonusScore >= 0 ? '+' : ''}{bonusScore} <GoldCoinIcon className="inline-block w-5 h-5 ml-1" />)
-                            </span>
-                        </>
-                    )}
-                </button>
+                    <span className="flex items-center justify-center">
+                        {gameMode === 'progressive' ? (
+                            t('continueWithBonus', { bonusScore })
+                        ) : (
+                            <>
+                                {t('continue')}{' '}
+                                <span className="inline-flex items-center ml-2">
+                                    ({bonusScore >= 0 ? '+' : ''}{bonusScore} <GoldCoinIcon className="inline-block w-5 h-5 ml-1" />)
+                                </span>
+                            </>
+                        )}
+                    </span>
+                </PressableButton>
             )}
             {gameLost && (
-                <button
+                <PressableButton
                     onClick={handleFailureContinue}
-                    className={`${passButtonClasses} ${lostButtonClasses} animate-appear`}
+                    color="accent"
+                    className="w-full max-w-xs animate-appear"
+                    size="large"
                 >
-                    {t('tryAgain')}
-                </button>
+                    <span>{t('tryAgain')}</span>
+                </PressableButton>
             )}
         </div>
       </div>

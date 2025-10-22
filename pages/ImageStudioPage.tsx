@@ -425,7 +425,14 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
         <div className="flex-grow p-4 bg-brand-secondary/30 rounded-lg shadow-inner-strong flex items-center justify-center" style={previewContainerStyle}>
             <div className="flex flex-col items-center gap-8" style={{ perspective: '1000px' }}>
                 <div className="w-48">
-                    <ChoiceButton word={t('preview')} onClick={() => {}} disabled={false} status={'default'} />
+                    <ChoiceButton
+                        word={t('preview')}
+                        onClick={() => {}}
+                        disabled={false}
+                        status={'default'}
+                        // FIX: Add required `revealPercentage` prop for the preview button.
+                        revealPercentage={100}
+                    />
                 </div>
                 <div className="transform scale-125">
                     <LetterCube letter="A" size={64} animationDelay="0s" />

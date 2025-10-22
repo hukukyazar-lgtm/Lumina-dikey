@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import IntroAnimation from './components/IntroAnimation';
 import MapPage from './pages/MapPage';
 import MainLayout from './components/MainLayout';
@@ -20,8 +21,8 @@ import { useThemeManager } from './hooks/useThemeManager';
 import { fetchWordChallenge } from './services/geminiService';
 import { saveLocalHighScore } from './services/scoreService';
 import { soundService } from './services/soundService';
-import { saveGuestProgress, loadGuestProgress, clearGuestProgress, saveEndlessHighScore, loadEndlessHighScore, saveEndlessProgress, loadEndlessProgress, clearEndlessProgress, saveTotalMoney, loadTotalMoney, loadPlayerProfile, savePlayerProfile, loadPlayerInventory, savePlayerInventory, saveCustomPlanetImages, loadCustomPlanetImages, saveCustomGameBackground, loadCustomGameBackground, saveCustomButtonTexture, loadCustomButtonTexture, saveCustomMenuBackground, loadCustomMenuBackground, loadCustomButtonStructure, saveCustomCubeStyle, loadCustomCubeStyle, saveCustomCubeTexture, loadCustomCubeTexture, saveCustomTheme } from './services/progressService';
-import type { GameStatus, WordChallenge, Difficulty, LevelProgress, GameMode, WordLength, SavedProgress, SavedEndlessState, PlayerProfile, AchievementConditionState, PlayerInventory, ThemePalette } from './types';
+import { saveGuestProgress, loadGuestProgress, clearGuestProgress, saveEndlessHighScore, loadEndlessHighScore, saveEndlessProgress, loadEndlessProgress, clearEndlessProgress, saveTotalMoney, loadTotalMoney, loadPlayerProfile, savePlayerProfile, loadPlayerInventory, savePlayerInventory, saveCustomPlanetImages, loadCustomPlanetImages, saveCustomGameBackgrounds, loadCustomGameBackgrounds, saveCustomButtonTexture, loadCustomButtonTexture, saveCustomMenuBackground, loadCustomMenuBackground, loadCustomButtonStructure, saveCustomCubeStyle, loadCustomCubeStyle, saveCustomCubeTexture, loadCustomCubeTexture, saveCustomTheme } from './services/progressService';
+import type { GameStatus, WordChallenge, Difficulty, LevelProgress, GameMode, WordLength, SavedProgress, SavedEndlessState, PlayerProfile, AchievementConditionState, PlayerInventory, ThemePalette, GameBackgrounds } from './types';
 import { difficultySettings, LIFE_BONUS_INTERVAL, STARTING_LIVES, MEMORY_GAME_INTERVAL, MAX_LIVES, difficultyProgression, difficultyPoints, ENDLESS_TIMER, difficultyAnimations, planetImageUrls, ADVENTURE_GATEWAYS_PER_PLANET, planetBackgroundSizes, achievements, shopItems, cubeColorPalettes, cubeStyles } from './config';
 // FIX: Import the 'themes' object to apply cosmetic theme styles to game elements.
 import { themes } from './themes';
@@ -31,6 +32,14 @@ import { themes } from './themes';
 const shuffleArray = <T,>(array: T[]): T[] => {
   return [...array].sort(() => Math.random() - 0.5);
 };
+
+const getAnimationKey = (status: GameStatus): string => {
+  if (['playing', 'correct', 'incorrect'].includes(status)) {
+    return 'gameplay-active';
+  }
+  return status;
+};
+
 
 export default function App() {
   const { gameplayLanguage, t, sfxVolume, musicVolume } = useLanguage();
@@ -85,6 +94,7 @@ export default function App() {
   
   // States for Endless Mode
   const [gameMoney, setGameMoney] = useState(0);
+  const [endlessScore, setEndlessScore] = useState(0);
   const [endlessWordCount, setEndlessWordCount] = useState(0);
   const [endlessHighScore, setEndlessHighScore] = useState(0);
   const [currentAnimationClass, setCurrentAnimationClass] = useState<string | null>(null);
@@ -95,7 +105,7 @@ export default function App() {
   // State for custom images
   const [customPlanetImages, setCustomPlanetImages] = useState<Record<number, string>>(loadCustomPlanetImages());
   const [customMenuBackgroundUrl, setCustomMenuBackgroundUrl] = useState<string | null>(loadCustomMenuBackground());
-  const [customGameBackgroundUrl, setCustomGameBackgroundUrl] = useState<string | null>(loadCustomGameBackground());
+  const [customGameBackgrounds, setCustomGameBackgrounds] = useState<GameBackgrounds>(loadCustomGameBackgrounds());
   const [customButtonTextureUrl, setCustomButtonTextureUrl] = useState<string | null>(loadCustomButtonTexture());
   const [customCubeTextureUrl, setCustomCubeTextureUrl] = useState<string | null>(loadCustomCubeTexture());
   const [activeCubeStyle, setActiveCubeStyle] = useState<string>(loadCustomCubeStyle() || 'default');
@@ -195,14 +205,19 @@ export default function App() {
                 
                 const scoreMultiplierLevel = playerInventory.upgrades['score-multiplier'] || 0;
                 const basePoints = difficulty ? difficultyPoints[difficulty] : 1;
-                const points = basePoints * (1 + scoreMultiplierLevel * 0.1); // 10% bonus per level
-                setScore(s => s + points);
+                
+                // NEW SCORING LOGIC: Combine base points with a time bonus.
+                const timeBonus = timeLeftRef.current;
+                const rawPoints = basePoints + timeBonus;
+                const finalPoints = Math.round(rawPoints * (1 + scoreMultiplierLevel * 0.1));
+
+                setScore(s => s + finalPoints);
 
                 setSuccessfulRoundCount(c => c + 1);
                 
-                // Add data for memory game
-                setMemoryGameWordData(prev => [...prev, {word, score: points}]);
-                setMemoryGameAllChoices(prev => shuffleArray([...new Set([...prev, ...choices])]));
+                // Add data for memory game, using the newly calculated final points.
+                setMemoryGameWordData(prev => [...prev, {word, score: finalPoints}]);
+                setMemoryGameAllChoices(prev => [...new Set([...prev, ...choices])]);
 
                 const newConsecutive = consecutiveCorrectAnswers + 1;
                 if (newConsecutive >= LIFE_BONUS_INTERVAL) {
@@ -227,7 +242,7 @@ export default function App() {
                 // The 'score' property is used as the coin value in the memory game
                 setMemoryGameWordData(prev => [...prev, { word: wordChallenge.correctWord, score: coinsPerWord }]);
             }
-            setMemoryGameAllChoices(prev => shuffleArray([...new Set([...prev, ...choices])]));
+            setMemoryGameAllChoices(prev => [...new Set([...prev, ...choices])]);
              
              if (isCorrect) {
                 soundService.play('correct');
@@ -235,6 +250,9 @@ export default function App() {
                 updateGameMoney(m => m + coinsPerWord);
                 setEndlessWordCount(c => c + 1);
                 usedWords.current.add(word);
+                // NEW SCORING LOGIC
+                const points = timeLeftRef.current + (difficulty ? difficultyPoints[difficulty] * 2 : 2);
+                setEndlessScore(s => s + points);
             } else {
                 soundService.play('incorrect');
                 setGameStatus('incorrect');
@@ -338,13 +356,17 @@ export default function App() {
             
             // Reset game state for a new run based on selected difficulty
             let initialWordCount = 0;
+            let initialScore = 0;
             if (startingDifficulty === 'medium') {
                 initialWordCount = 15; // Corresponds to 'Skilled'
+                initialScore = 250;
             } else if (startingDifficulty === 'hard') {
                 initialWordCount = 30; // Corresponds to 'Master'
+                initialScore = 600;
             }
     
             setEndlessWordCount(initialWordCount);
+            setEndlessScore(initialScore);
             setRoundCount(initialWordCount); // Sync round count for memory game logic
             setMemoryGameWordData([]);
             setMemoryGameAllChoices([]);
@@ -420,9 +442,12 @@ export default function App() {
     updatePlayerProfile(p => ({ ...p, avatar: imageUrl }));
   }, [updatePlayerProfile]);
 
-  const handleSetGameBackground = useCallback((imageUrl: string) => {
-    setCustomGameBackgroundUrl(imageUrl);
-    saveCustomGameBackground(imageUrl);
+  const handleSetGameBackground = useCallback((difficultyGroup: 'easy' | 'medium' | 'hard', imageUrl: string | null) => {
+    setCustomGameBackgrounds(prev => {
+        const newBgs = { ...prev, [difficultyGroup]: imageUrl };
+        saveCustomGameBackgrounds(newBgs);
+        return newBgs;
+    });
   }, []);
 
   const handleSetCustomButtonTexture = useCallback((imageUrl: string) => {
@@ -692,6 +717,7 @@ export default function App() {
             // Save checkpoint AFTER successful gateway completion
             const progressToSave: SavedEndlessState = {
                 gameMoney: newMoney,
+                endlessScore: endlessScore,
                 endlessWordCount: endlessWordCount,
                 roundCount: roundCount,
                 memoryGameWordData: [], // This data is for the next round, so start fresh
@@ -718,7 +744,7 @@ export default function App() {
                  setGameStatus('advancing');
             }
         }
-    }, [endlessWordCount, gameMode, gameMoney, roundCount, usedWords, updateGameMoney, endlessHighScore, endlessStartingDifficulty]);
+    }, [endlessWordCount, gameMode, gameMoney, roundCount, usedWords, updateGameMoney, endlessHighScore, endlessStartingDifficulty, endlessScore]);
 
     const handleMemoryGameFailure = useCallback(() => {
         if (gameMode === 'progressive') {
@@ -741,6 +767,7 @@ export default function App() {
             if (endlessCheckpoint) {
                 // Restore from the last successful checkpoint
                 updateGameMoney(endlessCheckpoint.gameMoney);
+                setEndlessScore(endlessCheckpoint.endlessScore);
                 setEndlessWordCount(endlessCheckpoint.endlessWordCount);
                 setRoundCount(endlessCheckpoint.roundCount);
                 usedWords.current = new Set(endlessCheckpoint.usedWords);
@@ -750,12 +777,16 @@ export default function App() {
             } else {
                 // Failed the very first gateway, reset to starting difficulty
                 let initialWordCount = 0;
+                let initialScore = 0;
                 if (endlessStartingDifficulty === 'medium') {
                     initialWordCount = 15;
+                    initialScore = 250;
                 } else if (endlessStartingDifficulty === 'hard') {
                     initialWordCount = 30;
+                    initialScore = 600;
                 }
                 setEndlessWordCount(initialWordCount);
+                setEndlessScore(initialScore);
                 setRoundCount(initialWordCount);
                 usedWords.current.clear();
                 clearEndlessProgress(); // Clear saved progress as well, but money is safe.
@@ -841,6 +872,7 @@ export default function App() {
                 onSetCustomCubeStyle={handleSetCustomCubeStyle}
                 activeCubeStyle={activeCubeStyle}
                 onSetCustomTheme={handleSetCustomTheme}
+                customGameBackgrounds={customGameBackgrounds}
             />;
         case 'practiceMenu':
              return (
@@ -892,11 +924,14 @@ export default function App() {
                     countdownDisplay={countdownDisplay}
                     gameMoney={gameMoney}
                     endlessWordCount={endlessWordCount}
+                    endlessScore={endlessScore}
                     endlessHighScore={endlessHighScore}
                     animationClass={currentAnimationClass}
+                    // FIX: Pass the correct state variable `currentAnimationDuration` for the animation duration.
                     animationDuration={currentAnimationDuration}
+                    playerInventory={playerInventory}
                     activeTheme={playerInventory.activeTheme}
-                    customGameBackgroundUrl={customGameBackgroundUrl}
+                    customGameBackgrounds={customGameBackgrounds}
                     customButtonTextureUrl={customButtonTextureUrl}
                     customCubeTextureUrl={customCubeTextureUrl}
                 />
@@ -967,22 +1002,38 @@ export default function App() {
       {gameStatus === 'intro' ? (
         <IntroAnimation />
       ) : (
-        renderContent()
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={getAnimationKey(gameStatus)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="w-full h-full"
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
       )}
-      <ConfirmationModal
-        isOpen={isQuitConfirmVisible}
-        onConfirm={() => {
-          setIsQuitConfirmVisible(false);
-          handleReturnToMenu();
-        }}
-        onCancel={() => setIsQuitConfirmVisible(false)}
-        title={t('quitConfirmationTitle')}
-        message={t('quitConfirmationMessage')}
-        confirmTextKey="confirmQuit"
-        cancelTextKey="cancelQuit"
-      />
-      {gameStatus === 'continuePrompt' && (
-         <ConfirmationModal
+      <AnimatePresence>
+        {isQuitConfirmVisible && (
+          <ConfirmationModal
+            isOpen={isQuitConfirmVisible}
+            onConfirm={() => {
+              setIsQuitConfirmVisible(false);
+              handleReturnToMenu();
+            }}
+            onCancel={() => setIsQuitConfirmVisible(false)}
+            title={t('quitConfirmationTitle')}
+            message={t('quitConfirmationMessage')}
+            confirmTextKey="confirmQuit"
+            cancelTextKey="cancelQuit"
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {gameStatus === 'continuePrompt' && (
+          <ConfirmationModal
             isOpen={true}
             onConfirm={() => {
               const saved = loadGuestProgress();
@@ -1013,8 +1064,9 @@ export default function App() {
             message={t('continuePromptMessage')}
             confirmTextKey="confirmContinue"
             cancelTextKey="cancelContinue"
-         />
-      )}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

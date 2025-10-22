@@ -1,7 +1,9 @@
-import React, { useRef, useMemo, useState, useLayoutEffect } from 'react';
+import React, { useRef, useMemo, useLayoutEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { soundService } from '../services/soundService';
 import { useLanguage } from './LanguageContext';
 import type { JourneyItem } from '../types';
+import InteractiveStartPlanet from './InteractiveStartPlanet';
 
 interface EndlessJourneyBarProps {
   onNodeClick: (node: JourneyItem) => void;
@@ -25,16 +27,13 @@ const END_PADDING = 200;
 const JourneyNode: React.FC<{ 
   type: 'planet' | 'gate'; 
   onClick: () => void; 
+  size: number;
   color?: string;
-  className?: string; 
   name?: string;
-  style?: React.CSSProperties;
-  isCurrent?: boolean;
-  animationDelay?: string;
   imageUrl?: string;
   backgroundSize?: string;
-  isFirstPlanet?: boolean;
-}> = React.memo(({ type, onClick, color, className, name, style, isCurrent, animationDelay, imageUrl, backgroundSize, isFirstPlanet }) => {
+  isCurrent?: boolean;
+}> = React.memo(({ type, onClick, size, color, name, imageUrl, backgroundSize, isCurrent }) => {
   const { t } = useLanguage();
   const isPlanet = type === 'planet';
   const handleNodeClick = () => {
@@ -42,41 +41,12 @@ const JourneyNode: React.FC<{
     onClick();
   };
 
-  if (isFirstPlanet) {
-    const planetSize = 512;
-// FIX: Cast the style object to React.CSSProperties to allow for custom CSS properties.
-    const buttonStyle = {
-        backgroundImage: `url(${imageUrl})`,
-        backgroundSize: '200% auto', // Sized for horizontal panning
-        backgroundPosition: 'center',
-        // The glow color is dynamically set from the planet's data
-        '--glow-color': color,
-    } as React.CSSProperties;
-
-    return (
-      <div style={{...style, width: `${planetSize}px`, height: `${planetSize}px` }} className="absolute">
-        <div className={`relative w-full h-full ${className}`}>
-          <button 
-            onClick={handleNodeClick} 
-            className="relative w-full h-full rounded-full focus:scale-105 transition-transform duration-300 animate-rotate-bg animate-subtle-glow-pulse"
-            style={buttonStyle} 
-            aria-label={name}
-          >
-            <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1), rgba(255,255,255,0) 60%)` }} />
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-white pointer-events-none">
-                
-            </div>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   if (isPlanet) {
-    const planetSize = 97;
     const buttonStyle: React.CSSProperties = {
-        borderColor: 'transparent',
-        boxShadow: isCurrent ? `0 0 25px ${color}, inset 0 0 15px rgba(0,0,0,0.4)` : `inset 0 0 10px rgba(0,0,0,0.3)`,
+      borderColor: 'transparent',
+      boxShadow: isCurrent ? `0 0 25px ${color}, inset 0 0 15px rgba(0,0,0,0.4)` : `inset 0 0 10px rgba(0,0,0,0.3)`,
+      width: '100%',
+      height: '100%',
     };
 
     if (imageUrl) {
@@ -87,51 +57,73 @@ const JourneyNode: React.FC<{
         buttonStyle.backgroundColor = color;
     }
     return (
-      <div style={{...style, width: `${planetSize}px`, height: `${planetSize}px` }} className="absolute">
-        <div className={`relative w-full h-full transition-shadow duration-500 ease-in-out ${className}`}>
-          <button 
-            onClick={handleNodeClick} 
-            className="relative w-full h-full border-2 rounded-full hover:scale-110 hover:shadow-xl focus:scale-110 focus:shadow-xl transition-transform" 
-            style={buttonStyle} 
-            aria-label={name}
-          >
-            <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), rgba(255,255,255,0) 70%)` }} />
-          </button>
-          {name && <span className="absolute top-full mt-2 text-sm font-bold text-brand-light/80 tracking-wider whitespace-nowrap" style={{ left: '50%', transform: 'translateX(-50%)', textShadow: '0 0 5px black' }}>{name}</span>}
-        </div>
+      <div className="relative w-full h-full">
+        <motion.div
+            className="w-full h-full"
+            animate={{ y: ["-2px", "2px"] }}
+            transition={{ duration: 3 + Math.random() * 2, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+        >
+            <motion.button 
+                onClick={handleNodeClick} 
+                className="relative border-2 rounded-full w-full h-full" 
+                style={buttonStyle} 
+                aria-label={name}
+                whileHover={{ scale: 1.2, zIndex: 30 }}
+                whileTap={{ scale: 1.1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+            >
+                <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), rgba(255,255,255,0) 70%)` }} />
+            </motion.button>
+        </motion.div>
+        {name && <span className="absolute top-full mt-2 text-sm font-bold text-brand-light/80 tracking-wider whitespace-nowrap" style={{ left: '50%', transform: 'translateX(-50%)', textShadow: '0 0 5px black' }}>{name}</span>}
       </div>
     );
   }
 
   // Gateway (swirling portal)
   return (
-    <div style={style} className="absolute">
-      <div className={`${className}`}>
-        <button onClick={handleNodeClick} aria-label="Gateway" className="relative flex items-center justify-center group">
-          <div 
-            className="w-[18px] h-[18px] rounded-full relative overflow-hidden transition-transform duration-300 group-hover:scale-110 shadow-[0_0_8px_var(--brand-accent-secondary-glow)]"
-            style={{ animationDelay: animationDelay }}
-          >
-            {/* Swirling background layer */}
-            <div 
-              className="absolute inset-[-5px] animate-spin" 
-              style={{
-                background: `conic-gradient(from 0deg, var(--brand-accent-secondary) 0%, var(--brand-quaternary) 25%, var(--brand-accent-secondary) 50%, transparent 75%, var(--brand-accent-secondary) 100%)`,
-                animationDuration: '4s',
-              }}
-            ></div>
-            {/* Inner hole that masks the center */}
-            <div 
-              className="absolute inset-[3px] rounded-full"
-              style={{
-                background: `radial-gradient(circle, var(--brand-primary) 0%, var(--brand-bg-gradient-end) 100%)`,
-                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)'
-              }}
-            ></div>
-          </div>
-        </button>
+    <motion.button 
+        onClick={handleNodeClick} 
+        aria-label="Gateway" 
+        className="relative flex items-center justify-center group w-full h-full"
+        whileHover={{ scale: 1.3, zIndex: 30 }}
+        whileTap={{ scale: 1.1 }}
+        animate={{ y: ["-3px", "3px"] }}
+        transition={{
+            y: {
+                duration: 2 + Math.random() * 1.5,
+                repeat: Infinity,
+                repeatType: "mirror",
+                ease: "easeInOut",
+            },
+            scale: {
+                type: 'spring',
+                stiffness: 400,
+                damping: 10,
+            },
+        }}
+    >
+      <div 
+        className="w-full h-full rounded-full relative overflow-hidden shadow-[0_0_8px_var(--brand-accent-secondary-glow)]"
+      >
+        {/* Swirling background layer */}
+        <div 
+          className="absolute inset-[-5px] animate-spin" 
+          style={{
+            background: `conic-gradient(from 0deg, var(--brand-accent-secondary) 0%, var(--brand-quaternary) 25%, var(--brand-accent-secondary) 50%, transparent 75%, var(--brand-accent-secondary) 100%)`,
+            animationDuration: '4s',
+          }}
+        ></div>
+        {/* Inner hole that masks the center */}
+        <div 
+          className="absolute inset-[3px] rounded-full"
+          style={{
+            background: `radial-gradient(circle, var(--brand-primary) 0%, var(--brand-bg-gradient-end) 100%)`,
+            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)'
+          }}
+        ></div>
       </div>
-    </div>
+    </motion.button>
   );
 });
 
@@ -198,12 +190,9 @@ const EndlessJourneyBar: React.FC<EndlessJourneyBarProps> = ({ onNodeClick, scro
                 const planetIndex = Math.floor(index / NODES_PER_PLANET);
                 const progressWithinPlanet = (index % NODES_PER_PLANET) - 1; // 0 to 5 for gates
                 
-                // Alternating sine wave direction for each planet system
                 const direction = planetIndex % 2 === 0 ? 1 : -1;
 
-                // Create a small tangential offset for the start and end of the sine wave
-                // This makes the path curve around the planets instead of going straight in.
-                const tangentialOffset = Math.PI / 18; // 10 degrees, small offset from center
+                const tangentialOffset = Math.PI / 18;
                 const angleRange = Math.PI - (2 * tangentialOffset);
                 const scaledProgress = progressWithinPlanet / (GATES_PER_PLANET - 1);
                 const angle = tangentialOffset + (scaledProgress * angleRange);
@@ -244,10 +233,6 @@ const EndlessJourneyBar: React.FC<EndlessJourneyBarProps> = ({ onNodeClick, scro
         }
     }, [containerHeight, scrollContainerRef]);
     
-    const randomAnimationDelays = useMemo(() => {
-        return journeyItems.map(() => `-${(Math.random() * 20).toFixed(2)}s`);
-    }, [journeyItems]);
-
     return (
         <div ref={containerRef} className="relative w-full" style={{ height: `${containerHeight}px` }}>
             <svg width={containerWidth} height={containerHeight} className="absolute top-0 left-0 pointer-events-none z-0">
@@ -280,32 +265,62 @@ const EndlessJourneyBar: React.FC<EndlessJourneyBarProps> = ({ onNodeClick, scro
                 if (!point) return null;
 
                 const isCurrent = index === currentProgressIndex;
-                const scale = item.type === 'planet' ? 1.0 : 0.8;
+                const isPlanet = item.type === 'planet';
 
+                if (index === 0) {
+                    const planetSize = 512;
+                    const style: React.CSSProperties = {
+                        position: 'absolute',
+                        bottom: `${point.y}px`,
+                        left: `${point.x}px`,
+                        transform: `translate(-50%, 50%)`,
+                        width: `${planetSize}px`,
+                        height: `${planetSize}px`,
+                        zIndex: 15,
+                    };
+                    return (
+                        <InteractiveStartPlanet
+                            key={item.id}
+                            style={style}
+                            onClick={() => onNodeClick(item)}
+                            color={item.color}
+                            name={item.nameKey ? t(item.nameKey as any) : undefined}
+                            imageUrl={item.imageUrl}
+                        />
+                    );
+                }
+
+                const size = isPlanet ? 97 : 18;
                 const style: React.CSSProperties = {
                     position: 'absolute',
                     bottom: `${point.y}px`,
                     left: `${point.x}px`,
-                    transform: `translate(-50%, 50%) scale(${point.scale * scale})`,
-                    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, left 0.5s ease-in-out',
-                    zIndex: isCurrent ? 20 : point.zIndex,
+                    transform: 'translate(-50%, 50%)',
+                    width: `${size}px`,
+                    height: `${size}px`,
+                    zIndex: isCurrent ? 20 : (isPlanet ? 10 : 5),
                 };
 
                 return (
-                    <JourneyNode
+                    <motion.div
                         key={item.id}
-                        type={item.type}
-                        onClick={() => onNodeClick(item)}
-                        color={item.color}
-                        className="animate-appear"
-                        name={item.nameKey ? t(item.nameKey as any) : undefined}
                         style={style}
-                        isCurrent={isCurrent}
-                        animationDelay={randomAnimationDelays[index]}
-                        imageUrl={item.imageUrl}
-                        backgroundSize={item.backgroundSize}
-                        isFirstPlanet={index === 0}
-                    />
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true, amount: 0.8 }}
+                        transition={{ type: 'spring', stiffness: 150, damping: 20 }}
+                    >
+                        <JourneyNode
+                            type={item.type}
+                            onClick={() => onNodeClick(item)}
+                            size={size}
+                            color={item.color}
+                            name={isPlanet && item.nameKey ? t(item.nameKey as any) : undefined}
+                            isCurrent={isCurrent}
+                            imageUrl={item.imageUrl}
+                            backgroundSize={item.backgroundSize}
+                        />
+                    </motion.div>
                 );
             })}
         </div>

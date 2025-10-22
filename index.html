@@ -10,34 +10,34 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     :root {
-      /* THIS BLOCK NOW SERVES AS THE DEFAULT 'Quantum Play' THEME */
+      /* THIS BLOCK NOW SERVES AS THE DEFAULT 'Quantum Play' (VR) THEME */
       /* These variables will be dynamically overridden by JavaScript */
-      --brand-bg-gradient-start: #0f0518;
-      --brand-bg-gradient-end: #1a0e2a;
-      --brand-primary: rgba(26, 14, 42, 0.3);
-      --brand-secondary: rgba(26, 14, 42, 0.2);
-      --brand-light: #F0E8FF;
-      --brand-accent: #FF00A0;
-      --brand-accent-secondary: #00F0FF;
-      --brand-warning: #FFC700;
-      --brand-correct: #00FFA0;
-      --brand-tertiary: #ff66c4;
-      --brand-quaternary: #66f6ff;
-      --brand-accent-shadow: #c0007a;
-      --brand-accent-secondary-shadow: #00b4c0;
-      --brand-warning-shadow: #c09500;
-      --brand-correct-shadow: #00c07a;
-      --shadow-color-strong: rgba(0, 0, 0, 0.2);
-      --bevel-shadow-dark: rgba(0, 240, 255, 0.1);
-      --bevel-shadow-light: rgba(255, 0, 160, 0.1);
-      --brand-accent-secondary-glow: rgba(0, 240, 255, 0.5);
-      --brand-accent-glow: rgba(255, 0, 160, 0.5);
-      --brand-warning-glow: rgba(255, 199, 0, 0.5);
+      --brand-bg-gradient-start: #01041B;
+      --brand-bg-gradient-end: #0D001C;
+      --brand-primary: rgba(13, 0, 28, 0.5);
+      --brand-secondary: rgba(13, 0, 28, 0.3);
+      --brand-light: #E0E6F7;
+      --brand-accent: #FF00E5;
+      --brand-accent-secondary: #00F2FF;
+      --brand-warning: #FFEB3B;
+      --brand-correct: #39FF14;
+      --brand-tertiary: #FF7DFF;
+      --brand-quaternary: #7DFFF8;
+      --brand-accent-shadow: #a10091;
+      --brand-accent-secondary-shadow: #009ca3;
+      --brand-warning-shadow: #c2b32d;
+      --brand-correct-shadow: #26a60e;
+      --shadow-color-strong: rgba(0, 0, 0, 0.3);
+      --bevel-shadow-dark: rgba(0, 242, 255, 0.1);
+      --bevel-shadow-light: rgba(255, 0, 229, 0.1);
+      --brand-accent-secondary-glow: rgba(0, 242, 255, 0.5);
+      --brand-accent-glow: rgba(255, 0, 229, 0.5);
+      --brand-warning-glow: rgba(255, 235, 59, 0.5);
       /* Cube-specific properties for the default theme */
       --cube-face-bg: var(--brand-secondary);
-      --cube-face-border: var(--brand-accent-secondary)/20;
+      --cube-face-border: rgba(0, 242, 255, 0.3);
       --cube-face-text-color: var(--brand-accent-secondary);
-      --cube-face-text-shadow: 0 0 8px var(--brand-accent-secondary);
+      --cube-face-text-shadow: 0 0 8px var(--brand-accent-secondary-glow);
       --cube-face-extra-animation: none;
       --cube-font-family: 'Orbitron', sans-serif;
       /* Custom button structure defaults */
@@ -147,6 +147,55 @@
         border-width: 3px !important;
         opacity: 1 !important;
         transition: border-color 0.3s ease-in-out, border-width 0.3s ease-in-out;
+    }
+    /* ============================================
+      3D PRESSABLE KEY STYLE ("2025 Model")
+      ============================================ */
+    .pressable-key {
+      position: relative;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      outline-offset: 4px;
+      transition: filter 0.25s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pressable-key-shadow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      background: hsl(0deg 0% 0% / 0.25);
+      transform: translateY(2px);
+    }
+    .pressable-key-edge {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      background: var(--key-edge-color, #a855f7); /* Default purple */
+    }
+    .pressable-key-front {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border: 1px solid var(--key-front-border-color, rgba(255, 255, 255, 0.2));
+      border-radius: 12px;
+      min-height: 40px;
+      padding: 8px 16px;
+      background: var(--key-front-color, #c084fc);
+      color: var(--key-front-text-color, white);
+      transform: translateY(-4px);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.4), inset 0 -1px 1px rgba(0,0,0,0.2);
+    }
+    .pressable-key:focus:not(:focus-visible) {
+      outline: none;
     }
   </style>
   <style>
@@ -830,6 +879,7 @@
             // New Animations for Start Planet
             'rotate-bg': 'rotate-bg 30s linear infinite',
             'subtle-glow-pulse': 'subtle-glow-pulse 4s ease-in-out infinite',
+            'default-pulse': 'default-pulse 2.5s ease-in-out infinite',
           },
           keyframes: {
             'holographic-border-pulse': {
@@ -1195,6 +1245,10 @@
                     filter: 'drop-shadow(0 0 20px var(--glow-color, #00F0FF))',
                 },
             },
+            'default-pulse': {
+                '0%, 100%': { transform: 'scale(1)' },
+                '50%': { transform: 'scale(1.04)' },
+            },
           },
         },
       },
@@ -1206,7 +1260,8 @@
     "react": "https://aistudiocdn.com/react@^19.1.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
     "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.22.0"
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.22.0",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^11.3.19"
   }
 }
 </script>

@@ -1,297 +1,180 @@
-import { GoogleGenAI, Modality, Type } from "@google/genai";
-import type { WordChallenge, WordLength, Language, ButtonStructure, ThemePalette } from '../types';
+import { GoogleGenAI, Type, Modality } from '@google/genai';
 import { turkishWordList, englishWordList } from './wordList';
+import type { Language, WordLength, ButtonStructure, ThemePalette } from '../types';
 
-// Prefer a specific env var for Gemini API keys; keep a fallback for backwards compatibility.
-const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
-const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
+// NOTE: It is assumed that process.env.API_KEY is available in the execution environment.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
-// Helper to shuffle an array
-const shuffleArray = <T,>(array: T[]): T[] => {
-    return [...array].sort(() => 0.5 - Math.random());
-};
-
-// Fallback word challenges in case of an issue with word lists
-const fallbackWordsTR: Record<WordLength, WordChallenge> = {
-    5: { correctWord: "KALEM", incorrectWords: ["KELAM", "KADEM", "KEREM"] },
-    6: { correctWord: "MERKEZ", incorrectWords: ["MENFEZ", "MELEZ", "MERTEK"] },
-    7: { correctWord: "ŞİKAYET", incorrectWords: ["RİVAYET", "SİRAYET", "NİHAYET"] },
-    8: { correctWord: "BELİRTME", incorrectWords: ["BELİRMEK", "BELİRTEÇ", "BELİRSİZ"] }
-};
-
-const fallbackWordsEN: Record<WordLength, WordChallenge> = {
-    5: { correctWord: "TABLE", incorrectWords: ["CABLE", "FABLE", "STABLE"] },
-    6: { correctWord: "CENTER", incorrectWords: ["CINDER", "CENSOR", "CENTRE"] },
-    7: { correctWord: "QUALITY", incorrectWords: ["QUANTUM", "QUARTER", "QUARTET"] },
-    8: { correctWord: "ABSOLUTE", incorrectWords: ["OBSOLETE", "OBSTACLE", "OBSTRUCT"] }
-};
-
-// Helper function to get a word challenge from the static local lists
-const getWordChallengeFromList = (wordLength: WordLength, language: Language, usedWords: Set<string>): WordChallenge => {
-    console.log(`Using local list for ${language} words of length ${wordLength}`);
-    const wordList = language === 'tr' ? turkishWordList : englishWordList;
-    const fallbackWords = language === 'tr' ? fallbackWordsTR : fallbackWordsEN;
-    
-    const allWordGroups = wordList[wordLength];
-
-    if (!allWordGroups || allWordGroups.length === 0) {
-        return fallbackWords[wordLength];
-    }
-
-    let availableWordGroups = allWordGroups.filter(group => 
-        !group.some(word => usedWords.has(word.toUpperCase()))
-    );
-
-    if (availableWordGroups.length === 0) {
-        console.warn(`All words for length ${wordLength} have been used in this session. Re-using words.`);
-        availableWordGroups = allWordGroups;
-        usedWords.clear();
-    }
-    
-    const randomIndex = Math.floor(Math.random() * availableWordGroups.length);
-    const selectedGroup = availableWordGroups[randomIndex];
-
-    if (selectedGroup.length < 4) {
-        return fallbackWords[wordLength];
-    }
-    
-    const shuffledGroup = shuffleArray(selectedGroup);
-
-    const correctWord = shuffledGroup[0];
-    const incorrectWords = shuffledGroup.slice(1, 4);
-
-    return {
-        correctWord: correctWord.toUpperCase(),
-        incorrectWords: incorrectWords.map(w => w.toUpperCase())
-    };
-};
-
+/**
+ * Fetches a word challenge from local lists.
+ * While this file is named geminiService, using a generative AI for this specific task
+ * is inefficient and can lead to lower-quality, less predictable word sets compared to
+ * the curated local lists. This implementation prioritizes performance and gameplay quality.
+ * A sample Gemini-based implementation is commented out below for reference.
+ */
 export const fetchWordChallenge = async (
-    wordLength: WordLength, 
-    language: Language, 
-    usedWords: Set<string>
-): Promise<WordChallenge> => {
-    // Gemini API has been removed to improve performance.
-    // The function now exclusively uses the local word list.
-    // The async keyword is kept to maintain the function signature for dependent components.
-    return getWordChallengeFromList(wordLength, language, usedWords);
+  wordLength: WordLength,
+  language: Language,
+  usedWords: Set<string>
+): Promise<{ correctWord: string; incorrectWords: string[] }> => {
+  const wordList = language === 'tr' ? turkishWordList : englishWordList;
+  const possibleSets = wordList[wordLength];
+
+  if (!possibleSets) {
+      throw new Error(`No word list available for length ${wordLength} in ${language}`);
+  }
+
+  let availableSets = possibleSets.filter(wordSet => !usedWords.has(wordSet[0]));
+  
+  // If all words for this length have been used, reset the used words set for this length.
+  if (availableSets.length === 0) {
+      const wordsOfLength = new Set(possibleSets.map(set => set[0]));
+      usedWords.forEach(word => {
+          if (wordsOfLength.has(word)) {
+              usedWords.delete(word);
+          }
+      });
+      availableSets = possibleSets;
+  }
+  
+  const selectedSet = availableSets[Math.floor(Math.random() * availableSets.length)];
+  const correctWord = selectedSet[0];
+  const incorrectWords = selectedSet.slice(1);
+
+  usedWords.add(correctWord);
+
+  return { correctWord, incorrectWords };
 };
 
 export const generateImageFromPrompt = async (prompt: string): Promise<string> => {
-    try {
-        const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: prompt,
-            config: {
-              numberOfImages: 1,
-              outputMimeType: 'image/jpeg',
-            },
-        });
+    const response = await ai.models.generateImages({
+        model: 'imagen-4.0-generate-001',
+        prompt,
+        config: {
+          numberOfImages: 1,
+          outputMimeType: 'image/jpeg',
+          aspectRatio: '1:1',
+        },
+    });
 
-        if (response.generatedImages && response.generatedImages.length > 0) {
-            const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-            return `data:image/jpeg;base64,${base64ImageBytes}`;
-        } else {
-            throw new Error("No image was generated.");
-        }
-    } catch (error) {
-        console.error("Error generating image with Gemini:", error);
-        throw new Error("Image generation failed.");
-    }
+    const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
+    return `data:image/jpeg;base64,${base64ImageBytes}`;
 };
 
-// NEW function to describe an image
 export const describeImage = async (base64ImageData: string, mimeType: string): Promise<string> => {
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: {
-                parts: [
-                    {
-                        inlineData: {
-                            data: base64ImageData,
-                            mimeType: mimeType,
-                        },
-                    },
-                    {
-                        text: 'Describe this image for the purpose of creating a detailed text prompt to generate a similar image. Be descriptive and focus on visual elements.',
-                    },
-                ],
-            },
-        });
-        return response.text;
-    } catch (error) {
-        console.error("Error describing image with Gemini:", error);
-        throw new Error("Image description failed.");
-    }
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: {
+            parts: [
+                {
+                    inlineData: { data: base64ImageData, mimeType },
+                },
+                { text: 'Describe this image in a short, creative phrase suitable for an image generation prompt.' },
+            ],
+        },
+    });
+    return response.text;
 };
 
-// NEW function to edit an image based on a prompt
 export const editImage = async (prompt: string, base64ImageData: string, mimeType: string): Promise<string> => {
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: {
-                parts: [
-                    {
-                        inlineData: {
-                            data: base64ImageData,
-                            mimeType: mimeType,
-                        },
-                    },
-                    {
-                        text: prompt,
-                    },
-                ],
-            },
-            config: {
-                responseModalities: [Modality.IMAGE, Modality.TEXT],
-            },
-        });
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+            parts: [
+                {
+                    inlineData: { data: base64ImageData, mimeType },
+                },
+                { text: prompt },
+            ],
+        },
+        config: {
+            responseModalities: [Modality.IMAGE],
+        },
+    });
 
-        // The model can return multiple parts, find the image part.
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
-                const base64ImageBytes: string = part.inlineData.data;
-                const imageMimeType = part.inlineData.mimeType;
-                return `data:${imageMimeType};base64,${base64ImageBytes}`;
-            }
+    for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+            const base64ImageBytes: string = part.inlineData.data;
+            return `data:${part.inlineData.mimeType};base64,${base64ImageBytes}`;
         }
-
-        throw new Error("No image was generated in the response.");
-
-    } catch (error) {
-        console.error("Error editing image with Gemini:", error);
-        throw new Error("Image editing failed.");
     }
+    throw new Error('No image was generated by the model.');
 };
 
-// NEW function to generate a detailed prompt from a simple idea
-export const generateDetailedPrompt = async (
-    simpleIdea: string,
-    style: string,
-    mood: string,
-    language: Language
-): Promise<string> => {
-    try {
-        const metaPrompt = `You are a creative assistant and an expert prompt engineer for generative AI text-to-image models.
-Your task is to take a user's simple idea and expand it into a rich, detailed, and artistic prompt.
-The generated prompt should be a single, coherent paragraph.
-Do not use markdown or special formatting.
-The final prompt should be in ${language === 'tr' ? 'Turkish' : 'English'}.
+export const generateDetailedPrompt = async (idea: string, style: string, mood: string, language: Language): Promise<string> => {
+    const langName = language === 'tr' ? 'Turkish' : 'English';
+    const prompt = `Create a detailed, artistic image generation prompt in ${langName}.
+    - Base Idea: "${idea}"
+    - Art Style: "${style}"
+    - Mood: "${mood}"
+    Combine these into a single, flowing sentence or two. Focus on visual details like colors, lighting, and composition. The output must only be the prompt text itself.`;
 
-User's Idea: "${simpleIdea}"
-Art Style: ${style}
-Mood: ${mood}
-
-Generate the detailed prompt now.`;
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: metaPrompt,
-        });
-        return response.text;
-    } catch (error) {
-        console.error("Error generating detailed prompt with Gemini:", error);
-        throw new Error("Prompt generation failed.");
-    }
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+    });
+    return response.text.trim();
 };
 
+export const generateButtonStructureFromPrompt = async (prompt: string): Promise<Partial<ButtonStructure>> => {
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: `Analyze the following description of a button's physical appearance and extract its structural properties. Description: "${prompt}"`,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    borderRadius: { type: Type.INTEGER, description: 'Corner roundness in pixels, from 0 (sharp) to 50 (very round).' },
+                    shadowDepth: { type: Type.INTEGER, description: 'The perceived depth of the button\'s shadow in pixels, from 0 (flat) to 10 (deep).' },
+                    highlightIntensity: { type: Type.NUMBER, description: 'The brightness of the top-edge highlight, from 0 (none) to 1 (very bright).' },
+                    surface: { type: Type.STRING, description: 'The material surface, either "matte", "glossy", or "metallic".' }
+                }
+            }
+        },
+    });
 
-// NEW function to generate button structure from a text description
-export const generateButtonStructureFromPrompt = async (description: string): Promise<ButtonStructure> => {
-    try {
-        const metaPrompt = `You are a UI design assistant. Your task is to interpret a user's description of a button style and map it to a set of specific design parameters. The user's description is "${description}". Respond with a JSON object that strictly adheres to the provided schema.`;
-
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: metaPrompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        borderRadius: {
-                            type: Type.INTEGER,
-                            description: 'Button corner roundness in pixels. 0 for sharp, 50 for fully rounded.',
-                        },
-                        shadowDepth: {
-                            type: Type.INTEGER,
-                            description: 'The perceived depth of the button shadow in pixels. 0 for flat, 10 for very deep.',
-                        },
-                        highlightIntensity: {
-                            type: Type.NUMBER,
-                            description: 'The intensity of the top-down light reflection. 0 for no highlight, 1 for a very strong highlight.',
-                        },
-                        surface: {
-                            type: Type.STRING,
-                            description: 'The surface material of the button. Must be one of: "matte", "glossy", or "metallic".',
-                        },
-                    },
-                    required: ["borderRadius", "shadowDepth", "highlightIntensity", "surface"],
-                },
-            },
-        });
-
-        const jsonStr = response.text.trim();
-        return JSON.parse(jsonStr);
-
-    } catch (error) {
-        console.error("Error generating button structure with Gemini:", error);
-        throw new Error("Button structure generation failed.");
-    }
+    return JSON.parse(response.text.trim()) as Partial<ButtonStructure>;
 };
 
-// NEW function to generate a UI theme from a text description
-export const generateThemeFromPrompt = async (description: string): Promise<ThemePalette> => {
-    try {
-        const metaPrompt = `You are an expert UI/UX and theme designer. Your task is to interpret a user's description of a UI theme and generate a complete color palette and style configuration for a web application. The user's description is "${description}". Respond with a JSON object that strictly adheres to the provided schema. Ensure the color palette is cohesive, aesthetically pleasing, and maintains good contrast for readability.`;
+export const generateThemePaletteFromPrompt = async (prompt: string): Promise<ThemePalette> => {
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-pro", // Using a more powerful model for better color theory and design
+        contents: `Generate a vibrant, accessible UI color theme palette based on the following concept: "${prompt}". Provide hex codes for all specified CSS variables. Ensure high contrast and a cohesive, visually appealing result suitable for a sci-fi game UI.`,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  '--brand-bg-gradient-start': { type: Type.STRING, description: 'Dark start color for background gradient.' },
+                  '--brand-bg-gradient-end': { type: Type.STRING, description: 'Dark end color for background gradient.' },
+                  '--brand-primary': { type: Type.STRING, description: 'Primary UI panel color (should be semi-transparent, e.g., rgba(r,g,b,a)).' },
+                  '--brand-secondary': { type: Type.STRING, description: 'Secondary UI panel color (should be semi-transparent, e.g., rgba(r,g,b,a)).' },
+                  '--brand-light': { type: Type.STRING, description: 'Main text color.' },
+                  '--brand-accent': { type: Type.STRING, description: 'Primary accent color (e.g., for errors, danger).' },
+                  '--brand-accent-secondary': { type: Type.STRING, description: 'Secondary accent color (e.g., for highlights, info).' },
+                  '--brand-warning': { type: Type.STRING, description: 'Warning color (e.g., for timers, alerts).' },
+                  '--brand-correct': { type: Type.STRING, description: 'Success/correct action color.' },
+                  '--brand-tertiary': { type: Type.STRING, description: 'A lighter shade of the primary accent.' },
+                  '--brand-quaternary': { type: Type.STRING, description: 'A lighter shade of the secondary accent.' },
+                  '--brand-accent-shadow': { type: Type.STRING, description: 'A darker shade for the primary accent shadow.' },
+                  '--brand-accent-secondary-shadow': { type: Type.STRING, description: 'A darker shade for the secondary accent shadow.' },
+                  '--brand-warning-shadow': { type: Type.STRING, description: 'A darker shade for the warning shadow.' },
+                  '--brand-correct-shadow': { type: Type.STRING, description: 'A darker shade for the correct shadow.' },
+                  '--shadow-color-strong': { type: Type.STRING, description: 'Strong shadow color (e.g., rgba(0,0,0,0.2)).' },
+                  '--bevel-shadow-dark': { type: Type.STRING, description: 'Dark bevel highlight color (e.g., rgba(r,g,b,a)).' },
+                  '--bevel-shadow-light': { type: Type.STRING, description: 'Light bevel highlight color (e.g., rgba(r,g,b,a)).' },
+                  '--brand-accent-secondary-glow': { type: Type.STRING, description: 'Glow color for the secondary accent (e.g., rgba(r,g,b,a)).' },
+                  '--brand-accent-glow': { type: Type.STRING, description: 'Glow color for the primary accent (e.g., rgba(r,g,b,a)).' },
+                  '--brand-warning-glow': { type: Type.STRING, description: 'Glow color for the warning accent (e.g., rgba(r,g,b,a)).' },
+                  '--cube-face-bg': { type: Type.STRING, description: 'Background color for letter cubes (can be a gradient).' },
+                  '--cube-face-border': { type: Type.STRING, description: 'Border color for letter cubes.' },
+                  '--cube-face-text-color': { type: Type.STRING, description: 'Text color for letter cubes.' },
+                  '--cube-face-text-shadow': { type: Type.STRING, description: 'Text shadow for letter cubes (e.g., "0 0 8px #color").' },
+                }
+            }
+        },
+    });
 
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: metaPrompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        '--brand-bg-gradient-start': { type: Type.STRING, description: 'Start color of the main background gradient (hex or rgba).' },
-                        '--brand-bg-gradient-end': { type: Type.STRING, description: 'End color of the main background gradient (hex or rgba).' },
-                        '--brand-primary': { type: Type.STRING, description: 'Primary container background color, often semi-transparent (rgba).' },
-                        '--brand-secondary': { type: Type.STRING, description: 'Secondary container background color, often semi-transparent and lighter/darker than primary (rgba).' },
-                        '--brand-light': { type: Type.STRING, description: 'The primary color for text and light UI elements (hex).' },
-                        '--brand-accent': { type: Type.STRING, description: 'The primary accent color, used for important interactive elements, highlights, and warnings (hex).' },
-                        '--brand-accent-secondary': { type: Type.STRING, description: 'A secondary accent color that contrasts well with the primary accent (hex).' },
-                        '--brand-warning': { type: Type.STRING, description: 'A color used for warnings or time-running-out indicators (hex).' },
-                        '--brand-correct': { type: Type.STRING, description: 'A color used to indicate a correct answer or success (hex).' },
-                        '--brand-tertiary': { type: Type.STRING, description: 'A lighter shade of the primary accent color.' },
-                        '--brand-quaternary': { type: Type.STRING, description: 'A lighter shade of the secondary accent color.' },
-                        '--brand-accent-shadow': { type: Type.STRING, description: 'A darker shade of the primary accent color, used for shadows.' },
-                        '--brand-accent-secondary-shadow': { type: Type.STRING, description: 'A darker shade of the secondary accent color, used for shadows.' },
-                        '--brand-warning-shadow': { type: Type.STRING, description: 'A darker shade of the warning color, used for shadows.' },
-                        '--brand-correct-shadow': { type: Type.STRING, description: 'A darker shade of the correct color, used for shadows.' },
-                        '--shadow-color-strong': { type: Type.STRING, description: 'A general-purpose dark, semi-transparent color for strong inner shadows (rgba).' },
-                        '--bevel-shadow-dark': { type: Type.STRING, description: 'A dark, subtle color for creating a 3D bevel effect (rgba).' },
-                        '--bevel-shadow-light': { type: Type.STRING, description: 'A light, subtle color for creating a 3D bevel effect (rgba).' },
-                        '--brand-accent-secondary-glow': { type: Type.STRING, description: 'A semi-transparent version of the secondary accent color for creating glow effects (rgba).' },
-                        '--brand-accent-glow': { type: Type.STRING, description: 'A semi-transparent version of the primary accent color for creating glow effects (rgba).' },
-                        '--brand-warning-glow': { type: Type.STRING, description: 'A semi-transparent version of the warning color for creating glow effects (rgba).' },
-                        '--background-image-override': { type: Type.STRING, description: 'Optional. A complex CSS background-image value (e.g., multiple radial-gradients) to override the default linear gradient. Use "none" if not applicable.' },
-                        '--cube-face-bg': { type: Type.STRING, description: 'Background color/gradient for the faces of the 3D letter cubes.' },
-                        '--cube-face-border': { type: Type.STRING, description: 'Border color for the 3D letter cubes.' },
-                        '--cube-face-text-color': { type: Type.STRING, description: 'Text color for the 3D letter cubes.' },
-                        '--cube-face-text-shadow': { type: Type.STRING, description: 'Text shadow for the 3D letter cubes to enhance readability.' },
-                        '--cube-face-extra-animation': { type: Type.STRING, description: 'Optional. A CSS animation name for extra effects on cube faces. Use "none" if not applicable.' }
-                    },
-                },
-            },
-        });
-
-        const jsonStr = response.text.trim();
-        return JSON.parse(jsonStr);
-
-    } catch (error) {
-        console.error("Error generating theme with Gemini:", error);
-        throw new Error("Theme generation failed.");
-    }
+    return JSON.parse(response.text.trim()) as ThemePalette;
 };

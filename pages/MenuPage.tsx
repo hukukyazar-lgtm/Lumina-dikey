@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useLanguage } from '../components/LanguageContext';
 import { Difficulty } from '../types';
 import { soundService } from '../services/soundService';
@@ -67,21 +68,22 @@ const MenuPage: React.FC<MenuPageProps> = ({ onSelect, onBack }) => {
     `;
 
     return (
-        <div className={`relative flex flex-col items-center justify-center w-full h-full p-4 animate-appear`}>
-            <div className="w-full max-w-2xl animate-appear">
+        <div className={`relative flex flex-col items-center justify-center w-full h-full p-4`}>
+            <div className="w-full max-w-2xl">
                 <div className="w-full grid grid-cols-2 gap-3 sm:gap-4">
                     {difficultyKeys.map((level) => (
-                        <button
+                        <motion.button
                             key={level}
                             onClick={() => handleSelect(level)}
                             disabled={!!selected}
+                            whileHover={{ scale: 1.05, transition: { type: 'spring', stiffness: 300 } }}
                             className={`
                                 relative w-full h-24 sm:h-28 p-1 sm:p-2 rounded-2xl border-2
                                 flex flex-col items-center justify-center
                                 transform transition-all duration-300 ease-in-out
                                 backdrop-blur-sm text-brand-light focus:outline-none
                                 bg-brand-primary border-brand-secondary
-                                hover:border-brand-accent-secondary hover:scale-105 hover:shadow-[0_0_25px_var(--brand-accent-secondary-glow)]
+                                hover:border-brand-accent-secondary hover:shadow-[0_0_25px_var(--brand-accent-secondary-glow)]
                                 disabled:cursor-not-allowed
                                 ${selected === level ? 'animate-select-difficulty-pop' : ''}
                                 ${selected && selected !== level ? 'opacity-0 scale-95' : ''}
@@ -94,7 +96,7 @@ const MenuPage: React.FC<MenuPageProps> = ({ onSelect, onBack }) => {
                                 </p>
                             </div>
                             <div className="text-xl sm:text-2xl mt-2">{difficultyEmojis[level]}</div>
-                        </button>
+                        </motion.button>
                     ))}
                 </div>
                 <div className="w-full flex justify-center mt-6">

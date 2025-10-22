@@ -1,42 +1,94 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { useLanguage } from './LanguageContext';
 
 interface WordTileProps {
   word: string;
   onClick: (word: string) => void;
   status: 'default' | 'found' | 'incorrect' | 'missed' | 'distractor' | 'selected';
-  style: React.CSSProperties;
+  style: React.CSSProperties; // This is for the random transform from parent
 }
 
 const WordTile: React.FC<WordTileProps> = ({ word, onClick, status, style }) => {
   const { t } = useLanguage();
-  const baseClasses = `
-    px-4 sm:px-5 py-2 sm:py-3 rounded-full cursor-pointer transition-all duration-200
-    backdrop-blur-sm shadow-bevel-inner border text-center
-    text-lg sm:text-xl font-black text-brand-light shadow-[0_5px_15px_rgba(0,0,0,0.3)]
-  `;
 
-  const defaultBgClasses = 'bg-gradient-to-br from-white/10 to-white/5 hover:from-white/20 hover:to-white/10';
+  const isDisabled = status === 'found' || status === 'incorrect' || status === 'missed' || status === 'distractor';
+  const isClickable = status === 'default' || status === 'selected';
 
-  const statusStyles = {
-    default: `${defaultBgClasses} border-brand-accent-secondary/50 hover:border-brand-accent-secondary`,
-    selected: 'bg-brand-accent/20 border-brand-accent scale-105 shadow-lg',
-    found: 'bg-brand-correct/80 border-brand-correct text-white shadow-[0_0_10px_var(--brand-correct)] cursor-default',
-    incorrect: 'bg-brand-accent/80 border-brand-accent text-white shadow-[0_0_10px_var(--brand-accent)] animate-shake-horizontal',
-    missed: 'bg-brand-warning/60 border-brand-warning text-white cursor-default animate-missed-word-glow z-10',
-    distractor: 'opacity-20 cursor-default',
+  const styleVars: React.CSSProperties = { ...style };
+  let frontTextColor = 'var(--brand-bg-gradient-end)';
+
+  switch (status) {
+    case 'found':
+      styleVars['--key-edge-color'] = 'var(--brand-correct-shadow)';
+      styleVars['--key-front-color'] = 'var(--brand-correct)';
+      break;
+    case 'incorrect':
+      styleVars['--key-edge-color'] = 'var(--brand-accent-shadow)';
+      styleVars['--key-front-color'] = 'var(--brand-accent)';
+      break;
+    case 'missed':
+      styleVars['--key-edge-color'] = 'var(--brand-warning-shadow)';
+      styleVars['--key-front-color'] = 'var(--brand-warning)';
+      frontTextColor = '#4a2c00'; // Darker text for better contrast on yellow
+      break;
+    case 'selected':
+      // Using a different color to distinguish from incorrect
+      styleVars['--key-edge-color'] = 'hsl(262, 83%, 40%)'; // Dark purple
+      styleVars['--key-front-color'] = 'hsl(262, 83%, 60%)'; // Bright purple
+      break;
+    case 'default':
+    default:
+      styleVars['--key-edge-color'] = 'var(--brand-accent-secondary-shadow)';
+      styleVars['--key-front-color'] = 'var(--brand-accent-secondary)';
+      break;
+  }
+  
+  styleVars['--key-front-text-color'] = frontTextColor;
+  styleVars['--key-front-border-color'] = 'rgba(255, 255, 255, 0.3)';
+
+  const getFontSizeClass = (wordLength: number): string => {
+    if (wordLength <= 5) return 'text-xl sm:text-2xl';
+    if (wordLength === 6) return 'text-lg sm:text-xl';
+    if (wordLength === 7) return 'text-base sm:text-lg';
+    return 'text-sm sm:text-base';
+  };
+  const fontSizeClass = getFontSizeClass(word.length);
+
+  const buttonAnimationVariants = {
+    incorrect: { x: [0, -4, 4, -4, 4, 0], transition: { duration: 0.4 } },
+    default: { x: 0 }
+  };
+  
+  const frontAnimationVariants = {
+    selected: { y: -6 },
+    default: { y: -4 },
   };
 
   return (
-    <div
-      onClick={() => (status === 'default' || status === 'selected') && onClick(word)}
-      className={`${baseClasses} ${statusStyles[status]}`}
-      style={style}
-      role="button"
-      aria-label={`${t('selectWord')} ${word}`}
+    <motion.button
+        onClick={() => isClickable && onClick(word)}
+        disabled={isDisabled}
+        className={`pressable-key transition-opacity duration-300 ${isDisabled ? 'cursor-default' : ''} ${status === 'distractor' ? 'opacity-30' : 'opacity-100'}`}
+        style={styleVars}
+        aria-label={`${t('selectWord')} ${word}`}
+        variants={buttonAnimationVariants}
+        animate={status === 'incorrect' ? 'incorrect' : 'default'}
+        whileHover={isClickable ? { y: -2 } : {}}
+        whileTap={isClickable ? { y: 1 } : {}}
+        transition={{ type: 'spring', stiffness: 600, damping: 15 }}
     >
-      {word}
-    </div>
+        <span className="pressable-key-shadow" />
+        <span className={`pressable-key-edge ${status === 'missed' ? 'animate-missed-word-glow' : ''}`} />
+        <motion.div 
+          className={`pressable-key-front font-sans font-black px-4 sm:px-5 ${fontSizeClass}`}
+          variants={frontAnimationVariants}
+          animate={status === 'selected' ? 'selected' : 'default'}
+          transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+        >
+            <span>{word}</span>
+        </motion.div>
+    </motion.button>
   );
 };
 

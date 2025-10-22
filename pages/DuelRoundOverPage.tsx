@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLanguage } from '../components/LanguageContext';
 import { soundService } from '../services/soundService';
+import PressableButton from '../components/PressableButton';
 
 interface DuelRoundOverPageProps {
     roundNumber: number;
@@ -79,19 +80,14 @@ const DuelRoundOverPage: React.FC<DuelRoundOverPageProps> = ({ roundNumber, roun
                     </div>
                 </div>
 
-                <button
+                <PressableButton
                     onClick={handleContinueClick}
-                    className="
-                        w-full max-w-xs text-center text-xl sm:text-2xl font-black p-4 rounded-full
-                        transform transition-all duration-150 ease-in-out
-                        backdrop-blur-sm shadow-bevel-inner border text-brand-bg focus:outline-none
-                        bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)]
-                        hover:bg-brand-accent-secondary hover:shadow-[0_6px_0_var(--brand-accent-secondary-shadow)]
-                        active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-secondary-shadow)]
-                    "
+                    color="secondary"
+                    size="large"
+                    className="w-full max-w-xs"
                 >
-                    {getButtonText()}
-                </button>
+                    <span>{getButtonText()}</span>
+                </PressableButton>
             </div>
         </div>
     );

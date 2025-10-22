@@ -1,6 +1,8 @@
 
 
 
+
+
 import { Difficulty, WordLength, Achievement, ShopItem } from './types';
 
 export const difficultySettings: Record<Difficulty, { wordLength: WordLength, timer: number, baseAnimationDuration: number }> = {
@@ -509,7 +511,7 @@ export const shopItems: ShopItem[] = [
 // High-resolution, artistic/illustrative image URLs for planets
 export const planetImageUrls: string[] = [
     // 1. Earth
-    'https://storage.googleapis.com/lumina-assets/stylized-earth-tech-v4.jpg',
+    'https://storage.googleapis.com/aistudio-hosting/user-assets/51_Pegasi_b_(Dimidium).png',
     // 2. Venus (Hot, cloudy)
     'https://storage.googleapis.com/luminaassets/Ven%C3%BCs.jpg',
     // 3. Mars (Red planet) - USER PROVIDED

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+// FIX: Import Variants type to fix framer-motion type error.
+import { motion, type Variants } from 'framer-motion';
 import { useLanguage } from '../components/LanguageContext';
 import { HighScore } from '../types';
 import { getGlobalHighScores, getLocalHighScores } from '../services/scoreService';
@@ -92,6 +94,22 @@ const LeaderboardPage: React.FC<LeaderboardPageProps> = ({ onReturnToMenu, isEmb
         soundService.play('click');
         onReturnToMenu();
     };
+
+    const containerVariants: Variants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+            staggerChildren: 0.05,
+            delayChildren: 0.2,
+            },
+        },
+    };
+
+    const itemVariants: Variants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } },
+    };
     
     const content = (
         <>
@@ -119,12 +137,17 @@ const LeaderboardPage: React.FC<LeaderboardPageProps> = ({ onReturnToMenu, isEmb
             
             <div className={`flex flex-col overflow-y-auto custom-scrollbar pr-2 ${isEmbedded ? '' : 'h-[40vh] sm:h-[50vh] max-h-[500px] mb-6'}`}>
                 {highScores.length > 0 ? (
-                    <ol className="space-y-2">
+                    <motion.ol
+                        className="space-y-2"
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
                         {highScores.map((score, index) => (
-                            <li 
+                            <motion.li 
                                 key={`${scope}-${timeFrame}-${index}`}
-                                className="flex justify-between items-center text-lg py-2 px-4 rounded-full bg-white/20 hover:bg-white/30 transition-colors animate-appear"
-                                style={{ animationDelay: `${index * 50}ms` }}
+                                variants={itemVariants}
+                                className="flex justify-between items-center text-lg py-2 px-4 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
                             >
                                 <div className="flex items-center flex-1 min-w-0">
                                     <span className="font-bold text-brand-light/70 w-8 text-center">{index + 1}.</span>
@@ -139,9 +162,9 @@ const LeaderboardPage: React.FC<LeaderboardPageProps> = ({ onReturnToMenu, isEmb
                                     <span className="hidden sm:inline-block font-mono text-xs text-brand-light/50 w-24 text-center">{formatDate(score.date)}</span>
                                     <span className="font-bold text-brand-accent-secondary w-16 text-right">{score.score}</span>
                                 </div>
-                            </li>
+                            </motion.li>
                         ))}
-                    </ol>
+                    </motion.ol>
                 ) : (
                     <div className="flex-grow flex items-center justify-center h-full">
                         <p className="text-brand-light/60 text-center">{t('noHighScores')}</p>

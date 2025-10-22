@@ -1,40 +1,42 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useLanguage } from './LanguageContext';
+import React from 'react';
+import { motion } from 'framer-motion';
 
 interface ScoreboardProps {
   score: number;
+  onClick?: () => void;
 }
 
-const Scoreboard: React.FC<ScoreboardProps> = ({ score }) => {
-  const { t } = useLanguage();
-  const [isAnimating, setIsAnimating] = useState(false);
-  const prevScoreRef = useRef(score);
-
-  useEffect(() => {
-    // Animate only when the score increases from its previous value.
-    if (score > prevScoreRef.current) {
-      setIsAnimating(true);
-      const timer = setTimeout(() => {
-        setIsAnimating(false);
-      }, 300); // Match this duration to the animation duration in CSS.
-
-      return () => clearTimeout(timer);
-    }
-    
-    // Update the ref to the current score for the next comparison.
-    prevScoreRef.current = score;
-  }, [score]);
-  
-  const panelClasses = 'bg-gradient-to-br from-brand-secondary/50 to-brand-primary/50 border-brand-light/10';
-
+const Scoreboard = React.forwardRef<HTMLButtonElement, ScoreboardProps>(({ score, onClick }, ref) => {
   return (
-    <div className={`h-10 flex items-center justify-center ${panelClasses} backdrop-blur-sm border px-4 sm:px-6 shadow-bevel-inner rounded-lg`}>
-      {/* Score */}
-      <span className={`text-lg sm:text-xl font-black text-brand-accent-secondary w-16 sm:w-20 text-center transition-transform ${isAnimating ? 'animate-score-pop' : ''}`}>
-        {score}
-      </span>
-    </div>
+    <motion.button
+      ref={ref}
+      onClick={onClick}
+      className="pressable-key"
+      whileHover={{ y: -2 }}
+      whileTap={{ y: 1, x: [0, -1, 1, -1, 1, 0], transition: { duration: 0.2 } }}
+      transition={{ type: 'spring', stiffness: 600, damping: 15 }}
+      style={{
+        '--key-edge-color': 'var(--brand-accent-secondary-shadow)',
+        '--key-front-border-color': 'rgba(255, 255, 255, 0.2)',
+        '--key-front-color': 'var(--brand-accent-secondary)',
+        '--key-front-text-color': '#1a0e2a',
+      } as React.CSSProperties}
+    >
+      <div className="pressable-key-shadow" />
+      <div className="pressable-key-edge" />
+      <div className="pressable-key-front text-lg sm:text-xl font-black">
+        <motion.span
+          key={score}
+          initial={{ y: -10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 12 }}
+          className="block w-16 sm:w-20 text-center"
+        >
+          {score}
+        </motion.span>
+      </div>
+    </motion.button>
   );
-};
+});
 
 export default React.memo(Scoreboard);

@@ -1,4 +1,4 @@
-import type { SavedProgress, SavedEndlessState, PlayerProfile, PlayerInventory, ThemePalette } from '../types';
+import type { SavedProgress, SavedEndlessState, PlayerProfile, PlayerInventory, ThemePalette, GameBackgrounds } from '../types';
 
 const GUEST_PROGRESS_KEY = 'lumina-guest-progress';
 const ENDLESS_HIGH_SCORE_KEY = 'lumina-endless-high-score';
@@ -8,7 +8,7 @@ const PLAYER_PROFILE_KEY = 'lumina-player-profile';
 const PLAYER_INVENTORY_KEY = 'lumina-player-inventory';
 const CUSTOM_PLANET_IMAGES_KEY = 'lumina-custom-planet-images'; // Renamed from CUSTOM_WORLD_IMAGE_KEY
 const CUSTOM_MENU_BACKGROUND_KEY = 'lumina-custom-menu-background'; // New key for menu bg
-const CUSTOM_GAME_BACKGROUND_KEY = 'lumina-custom-game-background';
+const CUSTOM_GAME_BACKGROUNDS_KEY = 'lumina-custom-game-backgrounds'; // New key for difficulty-based BGs
 const CUSTOM_BUTTON_TEXTURE_KEY = 'lumina-custom-button-texture';
 const CUSTOM_CUBE_TEXTURE_KEY = 'lumina-custom-cube-texture'; // New key
 const CUSTOM_BUTTON_STRUCTURE_KEY = 'lumina-custom-button-structure';
@@ -112,21 +112,23 @@ export const loadCustomCubeTexture = (): string | null => {
 };
 
 
-// --- Custom Game Background ---
-export const saveCustomGameBackground = (imageUrl: string): void => {
+// --- Custom Game Backgrounds (by difficulty) ---
+export const saveCustomGameBackgrounds = (backgrounds: GameBackgrounds): void => {
     try {
-        localStorage.setItem(CUSTOM_GAME_BACKGROUND_KEY, imageUrl);
+        localStorage.setItem(CUSTOM_GAME_BACKGROUNDS_KEY, JSON.stringify(backgrounds));
     } catch (error) {
-        console.error("Failed to save custom game background:", error);
+        console.error("Failed to save custom game backgrounds:", error);
     }
 };
 
-export const loadCustomGameBackground = (): string | null => {
+export const loadCustomGameBackgrounds = (): GameBackgrounds => {
     try {
-        return localStorage.getItem(CUSTOM_GAME_BACKGROUND_KEY);
+        const data = localStorage.getItem(CUSTOM_GAME_BACKGROUNDS_KEY);
+        const defaults = { easy: null, medium: null, hard: null };
+        return data ? { ...defaults, ...JSON.parse(data) } : defaults;
     } catch (error) {
-        console.error("Failed to load custom game background:", error);
-        return null;
+        console.error("Failed to load custom game backgrounds:", error);
+        return { easy: null, medium: null, hard: null };
     }
 };
 

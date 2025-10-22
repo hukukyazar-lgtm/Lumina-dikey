@@ -4,6 +4,7 @@ import { soundService } from '../services/soundService';
 import LetterCube from '../components/LetterCube';
 import type { GameMode } from '../types';
 import GoldCoinIcon from '../components/GoldCoinIcon';
+import PressableButton from '../components/PressableButton';
 
 interface GameOverPageProps {
     score: number;
@@ -119,20 +120,14 @@ const GameOverPage: React.FC<GameOverPageProps> = ({ score, level, missedWord, o
                         </>
                     )}
                 </div>
-                <button
+                <PressableButton
                     onClick={handleReturnClick}
-                    className={`
-                        w-full max-w-xs text-center text-xl sm:text-2xl font-black p-4 rounded-full
-                        transform transition-all duration-150 ease-in-out
-                        backdrop-blur-sm shadow-bevel-inner border text-brand-light focus:outline-none
-                        ${isEndless 
-                            ? 'bg-brand-warning/50 border-brand-warning/80 shadow-[0_4px_0_var(--brand-warning-shadow)] hover:bg-brand-warning/70 hover:shadow-[0_6px_0_var(--brand-warning-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-warning-shadow)]' 
-                            : 'bg-brand-accent/50 border-brand-accent/80 shadow-[0_4px_0_var(--brand-accent-shadow)] hover:bg-brand-accent/70 hover:shadow-[0_6px_0_var(--brand-accent-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-shadow)]'
-                        }
-                    `}
+                    color={isEndless ? 'warning' : 'accent'}
+                    size="large"
+                    className="w-full max-w-xs"
                 >
-                    {t('returnToMenu')}
-                </button>
+                    <span>{t('returnToMenu')}</span>
+                </PressableButton>
             </div>
         </div>
     );

@@ -1,10 +1,11 @@
 import React, { useRef, useState, useLayoutEffect, useCallback, useEffect } from 'react';
+// FIX: Import Variants type to fix framer-motion type error.
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useLanguage } from '../components/LanguageContext';
 import MoneyDisplay from '../components/MoneyDisplay';
 import EndlessHighScoreDisplay from '../components/EndlessHighScoreDisplay';
 import EndlessJourneyBar from '../components/EndlessJourneyBar';
 import { PlayerProfile, JourneyItem } from '../types';
-import LuminaCube from '../components/LuminaCube';
 import { soundService } from '../services/soundService';
 import { planetNameTranslationKeys, planetImageUrls, planetBackgroundSizes } from '../config';
 
@@ -21,10 +22,6 @@ interface StartGameModalProps {
 const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStart, planetName }) => {
   const { t } = useLanguage();
 
-  if (!isOpen) {
-    return null;
-  }
-
   const handleStart = (difficulty: StartDifficulty) => {
     soundService.play('start');
     onStart(difficulty);
@@ -34,35 +31,92 @@ const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStar
     soundService.play('click');
     onClose();
   }
+  
+  const backdropVariants: Variants = {
+    visible: { opacity: 1 },
+    hidden: { opacity: 0 },
+  };
+
+  const modalVariants: Variants = {
+    hidden: { scale: 0.9, opacity: 0, y: 20 },
+    visible: { scale: 1, opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } },
+    exit: { scale: 0.9, opacity: 0, y: 20 },
+  };
 
   return (
-    <div className="fixed inset-0 bg-brand-bg/90 backdrop-blur-md z-50 flex flex-col items-center justify-center animate-appear p-4" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
-      <div className="w-full max-w-md text-center p-6 sm:p-8 bg-brand-primary backdrop-blur-sm border-2 border-brand-accent-secondary rounded-2xl shadow-2xl shadow-brand-accent-secondary/20">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      exit="hidden"
+      variants={backdropVariants}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 bg-brand-bg/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+      <motion.div
+        variants={modalVariants}
+        className="w-full max-w-md text-center p-6 sm:p-8 bg-brand-primary backdrop-blur-sm border-2 border-brand-accent-secondary rounded-2xl shadow-2xl shadow-brand-accent-secondary/20">
         <h2 id="dialog-title" className="text-3xl sm:text-4xl font-black text-brand-light mb-2">{planetName}</h2>
         <p className="text-brand-light/80 mb-6">{t('endlessModeStartTitle')}</p>
         
         <div className="flex flex-col gap-4">
-          <button
+          <motion.button
             onClick={() => handleStart('easy')}
-            className="group relative w-full text-center text-xl sm:text-2xl font-black p-4 rounded-lg transform transition-all duration-150 ease-in-out shadow-bevel-inner border focus:outline-none text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.7)] border-brand-correct shadow-[0_4px_0_var(--brand-correct-shadow)] hover:shadow-[0_6px_0_var(--brand-correct-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-correct-shadow)] overflow-hidden"
+            className="pressable-key w-full"
+            whileHover={{ y: -2, scale: 1.05 }}
+            whileTap={{ y: 1, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 600, damping: 15 }}
+            style={{
+              '--key-edge-color': 'var(--brand-correct-shadow)',
+              '--key-front-color': 'var(--brand-correct)',
+              '--key-front-text-color': 'var(--brand-bg-gradient-end)',
+              '--key-front-border-color': 'rgba(255, 255, 255, 0.4)',
+            } as React.CSSProperties}
           >
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-300 ease-in-out group-hover:scale-110" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://storage.googleapis.com/lumina-assets/easy-difficulty-bg.jpg')" }} />
-            <span className="relative z-10">{t('difficultyEasy')}</span>
-          </button>
-          <button
+            <div className="pressable-key-shadow" />
+            <div className="pressable-key-edge" />
+            <div className="pressable-key-front text-xl sm:text-2xl font-black">
+              <span>{t('difficultyEasy')}</span>
+            </div>
+          </motion.button>
+          
+          <motion.button
             onClick={() => handleStart('medium')}
-            className="group relative w-full text-center text-xl sm:text-2xl font-black p-4 rounded-lg transform transition-all duration-150 ease-in-out shadow-bevel-inner border focus:outline-none text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.7)] border-brand-warning shadow-[0_4px_0_var(--brand-warning-shadow)] hover:shadow-[0_6px_0_var(--brand-warning-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-warning-shadow)] overflow-hidden"
+            className="pressable-key w-full animate-default-pulse"
+            whileHover={{ y: -2, scale: 1.05 }}
+            whileTap={{ y: 1, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 600, damping: 15 }}
+            style={{
+              '--key-edge-color': 'var(--brand-warning-shadow)',
+              '--key-front-color': 'var(--brand-warning)',
+              '--key-front-text-color': '#4a2c00',
+              '--key-front-border-color': 'rgba(255, 255, 255, 0.4)',
+            } as React.CSSProperties}
           >
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-300 ease-in-out group-hover:scale-110" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://storage.googleapis.com/lumina-assets/medium-difficulty-bg.jpg')" }} />
-            <span className="relative z-10">{t('difficultyMedium')}</span>
-          </button>
-          <button
+            <div className="pressable-key-shadow" />
+            <div className="pressable-key-edge" />
+            <div className="pressable-key-front text-xl sm:text-2xl font-black">
+              <span>{t('difficultyMedium')}</span>
+            </div>
+          </motion.button>
+
+          <motion.button
             onClick={() => handleStart('hard')}
-            className="group relative w-full text-center text-xl sm:text-2xl font-black p-4 rounded-lg transform transition-all duration-150 ease-in-out shadow-bevel-inner border focus:outline-none text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.7)] border-brand-accent shadow-[0_4px_0_var(--brand-accent-shadow)] hover:shadow-[0_6px_0_var(--brand-accent-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-shadow)] overflow-hidden"
+            className="pressable-key w-full"
+            whileHover={{ y: -2, scale: 1.05 }}
+            whileTap={{ y: 1, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 600, damping: 15 }}
+            style={{
+              '--key-edge-color': 'var(--brand-accent-shadow)',
+              '--key-front-color': 'var(--brand-accent)',
+              '--key-front-text-color': 'var(--brand-bg-gradient-end)',
+              '--key-front-border-color': 'rgba(255, 255, 255, 0.3)',
+            } as React.CSSProperties}
           >
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-300 ease-in-out group-hover:scale-110" style={{ backgroundImage: "linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://storage.googleapis.com/lumina-assets/hard-difficulty-bg.jpg')" }} />
-            <span className="relative z-10">{t('difficultyHard')}</span>
-          </button>
+            <div className="pressable-key-shadow" />
+            <div className="pressable-key-edge" />
+            <div className="pressable-key-front text-xl sm:text-2xl font-black">
+              <span>{t('difficultyHard')}</span>
+            </div>
+          </motion.button>
         </div>
 
         <button 
@@ -71,8 +125,8 @@ const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStar
         >
           {t('back')}
         </button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 // --- END IN-PAGE MODAL COMPONENT ---
@@ -122,39 +176,6 @@ const ImageStudioIcon: React.FC = () => (
     </svg>
 );
 // --- END SVG IONS ---
-
-const PortalLuminaCube: React.FC<{ 
-    style: React.CSSProperties; 
-    isUnlocked: boolean; 
-    onClick: () => void; 
-}> = ({ style, isUnlocked, onClick }) => {
-    const { t } = useLanguage();
-    const handleClick = () => {
-        if (isUnlocked) {
-            soundService.play('bonus');
-            onClick();
-        } else {
-            soundService.play('incorrect');
-        }
-    };
-    
-    return (
-        <div style={style} className="absolute animate-appear flex flex-col items-center">
-            <button
-                onClick={handleClick}
-                disabled={!isUnlocked}
-                className={`transition-all duration-700 ease-in-out ${isUnlocked ? 'filter-none cursor-pointer' : 'filter grayscale brightness-50 cursor-not-allowed'}`}
-                style={{ perspective: '800px' }}
-                title={isUnlocked ? 'Enter Next Universe' : 'Complete the final gateway to unlock'}
-            >
-                <div className={`${isUnlocked ? 'animate-gem-pulse' : ''}`}>
-                    <LuminaCube size={64} animationClass="animate-tumble-mythic" animationDuration="45s" />
-                </div>
-            </button>
-        </div>
-    );
-};
-
 
 interface MapPageProps {
   playerProfile: PlayerProfile;
@@ -210,16 +231,6 @@ const MapPage: React.FC<MapPageProps> = ({
         });
     }, [customPlanetImages]);
     
-    const expandJourney = useCallback(() => {
-        setJourneyItems(prevItems => {
-            const currentUniverseCount = prevItems.length / (PLANETS_PER_UNIVERSE * NODES_PER_PLANET);
-            return [...prevItems, ...generateUniverseItems(currentUniverseCount, customPlanetImages)];
-        });
-    }, [customPlanetImages]);
-
-    const finalGatewayIndex = journeyItems.length - 1;
-    const isPortalUnlocked = endlessProgressCount >= finalGatewayIndex;
-  
     const handleNodeClick = useCallback((node: JourneyItem) => {
         setSelectedNode(node);
         setIsStartModalOpen(true);
@@ -232,27 +243,8 @@ const MapPage: React.FC<MapPageProps> = ({
 
 
   return (
-    <div className="relative w-full h-screen text-brand-light font-mono flex flex-col overflow-hidden animate-appear">
-        <PortalLuminaCube
-            isUnlocked={isPortalUnlocked}
-            onClick={expandJourney}
-            style={{
-                position: 'absolute',
-                top: '1rem',
-                left: '1rem',
-                zIndex: 20,
-            }}
-        />
-
-        {customMenuBackgroundUrl && (
-            <div
-                className="absolute inset-0 bg-cover bg-center -z-10 animate-appear"
-                style={{ backgroundImage: `url(${customMenuBackgroundUrl})` }}
-            >
-                <div className="absolute inset-0 bg-brand-bg/80"></div>
-            </div>
-        )}
-
+    <div className="relative w-full h-screen text-brand-light font-mono flex flex-col overflow-hidden">
+        
         {/* Header */}
         <header className="w-full flex justify-end items-start p-4 z-20 flex-shrink-0">
             <div className="flex items-center gap-2">
@@ -264,21 +256,11 @@ const MapPage: React.FC<MapPageProps> = ({
                 >
                     <div className="w-7 h-7"><ImageStudioIcon /></div>
                 </button>
-                <button 
-                    onClick={onOpenShop}
-                    className="transition-transform duration-150 ease-in-out hover:scale-105 active:scale-100"
-                    aria-label={t('shopTitle')}
-                    title={t('shopTitle')}
-                >
+                <button onClick={onOpenShop} aria-label={t('endlessHighScore')}>
                     <EndlessHighScoreDisplay score={endlessHighScore} />
                 </button>
-                <button 
-                  onClick={onOpenProfile} 
-                  className="transition-transform duration-150 ease-in-out hover:scale-105 active:scale-100"
-                  aria-label={t('profile')}
-                  title={t('profile')}
-                >
-                  <MoneyDisplay money={gameMoney} />
+                 <button onClick={onOpenProfile} aria-label={t('gameMoney')}>
+                    <MoneyDisplay money={gameMoney} />
                 </button>
             </div>
         </header>
@@ -292,13 +274,19 @@ const MapPage: React.FC<MapPageProps> = ({
                 journeyItems={journeyItems}
             />
         </main>
-
-        <StartGameModal
-            isOpen={isStartModalOpen}
-            onClose={() => setIsStartModalOpen(false)}
-            onStart={handleStartGame}
-            planetName={selectedNode?.nameKey ? t(selectedNode.nameKey as any) : t('endless')}
-        />
+        
+        <AnimatePresence>
+            {isStartModalOpen && (
+                <motion.div>
+                    <StartGameModal
+                        isOpen={isStartModalOpen}
+                        onClose={() => setIsStartModalOpen(false)}
+                        onStart={handleStartGame}
+                        planetName={selectedNode?.nameKey ? t(selectedNode.nameKey as any) : t('endless')}
+                    />
+                </motion.div>
+            )}
+        </AnimatePresence>
     </div>
   );
 };
