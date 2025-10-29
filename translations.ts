@@ -49,6 +49,7 @@ export const translations = {
     feedbackCorrect: 'Correct!',
     feedbackIncorrect: 'Incorrect',
     countdownGo: 'GO!',
+    previousWords: 'Previous Words',
     
     // Confirmation Modals
     quitConfirmationTitle: 'Are you sure?',
@@ -333,6 +334,7 @@ export const translations = {
     feedbackCorrect: 'Doğru!',
     feedbackIncorrect: 'Yanlış',
     countdownGo: 'BAŞLA!',
+    previousWords: 'Önceki Kelimeler',
 
     // Confirmation Modals
     quitConfirmationTitle: 'Emin misiniz?',

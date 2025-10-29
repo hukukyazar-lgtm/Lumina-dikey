@@ -11,12 +11,11 @@ interface LetterCubeProps {
   activeTheme?: string; // Prop name clarified
   isSpecialCube?: boolean;
   speed?: number;
-  customTextureUrl?: string | null;
   isCorrect?: boolean;
   isIncorrect?: boolean;
 }
 
-const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDelay, faceClassName, noContent, disableContentAnimation = false, activeTheme = 'default', isSpecialCube, speed, customTextureUrl, isCorrect, isIncorrect }) => {
+const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDelay, faceClassName, noContent, disableContentAnimation = false, activeTheme = 'default', isSpecialCube, speed, isCorrect, isIncorrect }) => {
   const translateZ = size / 2;
 
   // Generate random visual properties once per cube instance.
@@ -116,8 +115,6 @@ const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDe
       style={{
         fontSize: `${contentSize}px`,
         animationDelay: !disableContentAnimation ? animationDelay : undefined,
-        color: customTextureUrl ? 'var(--brand-light)' : undefined,
-        textShadow: customTextureUrl ? '0 0 8px rgba(0,0,0,0.8)' : undefined,
       }}
     >
       {letter}
@@ -153,12 +150,6 @@ const LetterCube: React.FC<LetterCubeProps> = ({ letter, icon, size, animationDe
               opacity: (isCorrect || isIncorrect) ? 1 : randomValues.opacity,
               borderWidth: `${randomValues.borderWidth}px`,
             };
-
-            if (customTextureUrl) {
-                faceStyle.backgroundImage = `linear-gradient(rgba(26, 14, 42, 0.6), rgba(26, 14, 42, 0.6)), url(${customTextureUrl})`;
-                faceStyle.backgroundSize = 'cover';
-                faceStyle.backgroundPosition = 'center';
-            }
 
             return (
               <div

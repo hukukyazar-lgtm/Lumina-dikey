@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, CSSProperties } from 'react';
 import { useLanguage } from '../components/LanguageContext';
 import { soundService } from '../services/soundService';
-import { generateImageFromPrompt, describeImage, editImage, generateDetailedPrompt, generateButtonStructureFromPrompt, generateThemePaletteFromPrompt } from '../services/geminiService';
+import { generateImageFromPrompt, describeImage, editImage, analyzeImage, generateDetailedPrompt, generateButtonStructureFromPrompt, generateThemePaletteFromPrompt } from '../services/geminiService';
 import { saveGeneratedImages, loadGeneratedImages, saveCustomButtonStructure, saveCustomTheme } from '../services/progressService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { planetNameTranslationKeys, cubeStyles } from '../config';
@@ -25,6 +25,7 @@ interface DesignStudioPageProps {
 
 type StudioTab = 'texture' | 'structure' | 'cube' | 'theme';
 type ButtonSurface = 'matte' | 'glossy' | 'metallic';
+type AspectRatio = '1:1' | '9:16' | '16:9' | '4:3' | '3:4';
 
 const loadingMessages: (keyof typeof import('../translations').translations.en)[] = [
     'loading_message_1',
@@ -43,7 +44,7 @@ const loadingMessages: (keyof typeof import('../translations').translations.en)[
  * @param quality The JPEG quality (0 to 1).
  * @returns A promise that resolves with the compressed JPEG data URL.
  */
-const compressImage = (dataUrl: string, maxWidth = 400, quality = 0.7): Promise<string> => {
+const compressImage = (dataUrl: string, maxWidth = 1024, quality = 0.8): Promise<string> => {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
@@ -107,7 +108,9 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [savedImages, setSavedImages] = useState<string[]>(loadGeneratedImages());
     const [isPromptStudioOpen, setIsPromptStudioOpen] = useState(false);
-    
+    const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
+    const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+
     // Structure State
     const [borderRadius, setBorderRadius] = useState(16); // px
     const [shadowDepth, setShadowDepth] = useState(4); // px
@@ -141,17 +144,10 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
         });
     };
     
-    // This is the blob URL for efficient display in the current session
     const activeDisplayUrl = generatedImageUrl || sourceImage?.url;
-
-    // This is the persistent base64 data URL for saving and applying
     const activeDataUrl = useMemo(() => {
-        if (generatedImageUrl) {
-            return generatedImageUrl;
-        }
-        if (sourceImage) {
-            return `data:${sourceImage.mimeType};base64,${sourceImage.data}`;
-        }
+        if (generatedImageUrl) return generatedImageUrl;
+        if (sourceImage) return `data:${sourceImage.mimeType};base64,${sourceImage.data}`;
         return null;
     }, [generatedImageUrl, sourceImage]);
 
@@ -163,24 +159,19 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
             setIsLoading(true);
             setLoadingMessage(t(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]));
             setError(null);
+            setAnalysisResult(null);
             try {
-                // Step 1: Read file as a data URL to pass to the compressor
                 const originalDataUrl = await new Promise<string>((resolve, reject) => {
                     const reader = new FileReader();
                     reader.readAsDataURL(file);
                     reader.onload = () => resolve(reader.result as string);
                     reader.onerror = error => reject(error);
                 });
-    
-                // Step 2: Compress the image
                 const compressedUrl = await compressImage(originalDataUrl);
                 const { data, mimeType } = dataUrlToParts(compressedUrl);
-    
-                // Step 3: Update state with the compressed version
                 setSourceImage({ data, mimeType, url: compressedUrl });
                 setGeneratedImageUrl(null);
                 setPrompt('');
-    
             } catch (e) {
                 console.error(e);
                 setError('Failed to read image file.');
@@ -191,15 +182,15 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
     };
     
     const handleDescribe = async () => {
-        if (isLoading || !sourceImage) return;
-
+        if (isLoading || !activeDataUrl) return;
         soundService.play('start');
         setIsLoading(true);
         setLoadingMessage(t(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]));
         setError(null);
-
+        setAnalysisResult(null);
         try {
-            const description = await describeImage(sourceImage.data, sourceImage.mimeType);
+            const { data, mimeType } = dataUrlToParts(activeDataUrl);
+            const description = await describeImage(data, mimeType);
             setPrompt(description);
             soundService.play('bonus');
         } catch (e) {
@@ -213,24 +204,60 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
 
     const handleGenerate = async () => {
         if (isLoading || !prompt.trim()) return;
-
         soundService.play('start');
         setIsLoading(true);
         setLoadingMessage(t(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]));
         setError(null);
         setGeneratedImageUrl(null);
-
+        setAnalysisResult(null);
         try {
-            let resultUrl: string;
-            if (sourceImage) {
-                // Image editing workflow
-                resultUrl = await editImage(prompt, sourceImage.data, sourceImage.mimeType);
-            } else {
-                // Text-to-image workflow
-                resultUrl = await generateImageFromPrompt(prompt);
-            }
+            const resultUrl = await generateImageFromPrompt(prompt, aspectRatio);
             const compressedUrl = await compressImage(resultUrl);
             setGeneratedImageUrl(compressedUrl);
+            soundService.play('bonus');
+        } catch (e) {
+            console.error(e);
+            setError(t('imageGenError'));
+            soundService.play('gameOver');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleEdit = async () => {
+        if (isLoading || !prompt.trim() || !activeDataUrl) return;
+        soundService.play('start');
+        setIsLoading(true);
+        setLoadingMessage(t(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]));
+        setError(null);
+        setAnalysisResult(null);
+        try {
+            const { data, mimeType } = dataUrlToParts(activeDataUrl);
+            const resultUrl = await editImage(prompt, data, mimeType);
+            const compressedUrl = await compressImage(resultUrl);
+            setSourceImage(null);
+            setGeneratedImageUrl(compressedUrl);
+            soundService.play('bonus');
+        } catch (e) {
+            console.error(e);
+            setError(t('imageGenError'));
+            soundService.play('gameOver');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleAnalyze = async () => {
+        if (isLoading || !activeDataUrl || !prompt.trim()) return;
+        soundService.play('start');
+        setIsLoading(true);
+        setLoadingMessage(t(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]));
+        setError(null);
+        setAnalysisResult(null);
+        try {
+            const { data, mimeType } = dataUrlToParts(activeDataUrl);
+            const result = await analyzeImage(data, mimeType, prompt);
+            setAnalysisResult(result);
             soundService.play('bonus');
         } catch (e) {
             console.error(e);
@@ -244,7 +271,7 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
     const handleSaveImage = () => {
         if (!activeDataUrl || savedImages.includes(activeDataUrl)) return;
         soundService.play('bonus');
-        updateSavedImages(prev => [...prev, activeDataUrl]);
+        updateSavedImages(prev => [activeDataUrl, ...prev].slice(0, 10));
     };
 
     const handleSelectSavedImage = (imageUrl: string) => {
@@ -252,6 +279,7 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
         setGeneratedImageUrl(imageUrl);
         setSourceImage(null);
         setPrompt('');
+        setAnalysisResult(null);
     };
 
     const handleDeleteSavedImage = (indexToDelete: number) => {
@@ -363,7 +391,8 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
         setSourceImage(null);
         setGeneratedImageUrl(null);
         setPrompt('');
-    }
+        setAnalysisResult(null);
+    };
 
     const previewContainerStyle = useMemo(() => {
         const baseStyle = {
@@ -396,9 +425,9 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
         setPromptError(null);
         try {
             const result = await generateDetailedPrompt(simpleIdea, artStyle, mood, gameplayLanguage);
-            setPrompt(result); // Set the main prompt
+            setPrompt(result);
             soundService.play('bonus');
-            setIsPromptStudioOpen(false); // Close the studio after generating
+            setIsPromptStudioOpen(false);
         } catch (e) {
             console.error(e);
             setPromptError(t('promptGenError'));
@@ -484,15 +513,15 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
     
     const GameBackgroundManager = () => (
         <div className="flex-shrink-0 flex flex-col gap-2 p-2 bg-brand-secondary/30 rounded-lg">
-            <h3 className="text-lg font-bold text-brand-light/80 text-left">Oyun Arka Planları (Zorluğa Göre)</h3>
+            <h3 className="text-lg font-bold text-brand-light/80 text-left">Game Backgrounds (by Difficulty)</h3>
             {(['easy', 'medium', 'hard'] as const).map(difficulty => (
                 <div key={difficulty} className="flex items-center gap-2 p-2 bg-brand-secondary/50 rounded-md">
                     <div className="w-16 h-10 bg-black/20 rounded overflow-hidden flex-shrink-0">
                         {customGameBackgrounds[difficulty] && <img src={customGameBackgrounds[difficulty]!} alt={`${difficulty} background preview`} className="w-full h-full object-cover" />}
                     </div>
                     <span className="flex-grow text-left font-bold text-brand-light/80 capitalize">{t(`difficulty${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}` as any)}</span>
-                    <button onClick={() => handleClearGameBG(difficulty)} className="px-2 py-1 text-xs font-bold bg-brand-accent text-white rounded hover:bg-brand-accent/80" title="Temizle">X</button>
-                    <button onClick={() => handleSetAsGameBG(difficulty)} disabled={!activeDataUrl} className={`px-3 py-1 text-xs font-bold rounded ${!activeDataUrl ? 'bg-gray-500 text-gray-300' : 'bg-brand-correct text-black'}`}>Ayarla</button>
+                    <button onClick={() => handleClearGameBG(difficulty)} className="px-2 py-1 text-xs font-bold bg-brand-accent text-white rounded hover:bg-brand-accent/80" title="Clear">X</button>
+                    <button onClick={() => handleSetAsGameBG(difficulty)} disabled={!activeDataUrl} className={`px-3 py-1 text-xs font-bold rounded ${!activeDataUrl ? 'bg-gray-500 text-gray-300' : 'bg-brand-correct text-black'}`}>Set</button>
                 </div>
             ))}
         </div>
@@ -517,23 +546,45 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
                 {activeStudioTab === 'texture' ? (
                 <main className="flex-grow flex flex-col gap-4 min-h-0">
                     <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2">
-                        <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={sourceImage ? t('editPromptPlaceholder') : t('promptPlaceholder')} className="w-full flex-grow p-3 bg-brand-secondary/50 border-2 border-brand-light/20 rounded-lg text-lg text-brand-light focus:outline-none focus:border-brand-accent-secondary focus:ring-2 focus:ring-brand-accent-secondary/50 resize-none custom-scrollbar" rows={2} disabled={isLoading}/>
+                        <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={activeDisplayUrl ? "Ask a question or provide an edit instruction..." : t('promptPlaceholder')} className="w-full flex-grow p-3 bg-brand-secondary/50 border-2 border-brand-light/20 rounded-lg text-lg text-brand-light focus:outline-none focus:border-brand-accent-secondary focus:ring-2 focus:ring-brand-accent-secondary/50 resize-none custom-scrollbar" rows={2} disabled={isLoading}/>
                          <div className="flex flex-col gap-2">
-                            <input type="file" accept="image/png, image/jpeg, image/webp" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                            <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
                             <button onClick={() => fileInputRef.current?.click()} disabled={isLoading} className={`${actionButtonBaseClasses} text-sm text-white bg-brand-tertiary border-transparent`}>{t('uploadImage')}</button>
-                            {sourceImage && ( <button onClick={handleDescribe} disabled={isLoading} className={`${actionButtonBaseClasses} text-sm text-brand-bg bg-brand-quaternary border-transparent`}>{t('describeImage')}</button>)}
+                            {activeDataUrl && ( 
+                                <div className="flex gap-2">
+                                    <button onClick={handleDescribe} disabled={isLoading} className={`${actionButtonBaseClasses} text-sm text-brand-bg bg-brand-quaternary border-transparent flex-1`}>{t('describeImage')}</button>
+                                    <button onClick={handleAnalyze} disabled={isLoading || !prompt.trim()} className={`${actionButtonBaseClasses} text-sm text-brand-bg bg-brand-quaternary border-transparent flex-1 ${!prompt.trim() ? 'opacity-50' : ''}`}>Analyze</button>
+                                </div>
+                            )}
                         </div>
                     </div>
-                     <button onClick={() => setIsPromptStudioOpen(p => !p)} className="flex-shrink-0 text-sm font-bold text-brand-accent-secondary hover:underline">{t('promptStudio')} {isPromptStudioOpen ? '[-]' : '[+]'}</button>
-                    {isPromptStudioOpen && renderPromptStudio()}
+                    
+                    {!activeDisplayUrl && (
+                        <div className="flex-shrink-0 flex items-center justify-center flex-wrap gap-2 p-2 bg-brand-secondary/30 rounded-lg">
+                            <span className="text-sm font-bold text-brand-light/70 mr-2">Aspect Ratio:</span>
+                            {(['1:1', '16:9', '9:16', '4:3', '3:4'] as const).map(ar => (
+                                <button key={ar} onClick={() => setAspectRatio(ar)} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${aspectRatio === ar ? 'bg-brand-accent-secondary text-white' : 'bg-brand-secondary/50 text-brand-light/70'}`}>
+                                    {ar}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {isPromptStudioOpen && !activeDisplayUrl && renderPromptStudio()}
+                    {!activeDisplayUrl && <button onClick={() => setIsPromptStudioOpen(p => !p)} className="flex-shrink-0 text-sm font-bold text-brand-accent-secondary hover:underline">{t('promptStudio')} {isPromptStudioOpen ? '[-]' : '[+]'}</button>}
                     
                     <div className="relative flex-grow bg-brand-secondary/30 rounded-lg shadow-inner-strong flex flex-col items-center justify-center overflow-hidden">
                         {isLoading && <div className="z-10 text-center"><LoadingSpinner /><p className="mt-20 text-lg font-bold text-brand-light">{loadingMessage}</p></div>}
                         {error && !isLoading && ( <p className="text-brand-accent text-lg font-bold">{error}</p> )}
                         {activeDisplayUrl && !isLoading && ( <img src={activeDisplayUrl} alt={prompt || "User-generated or uploaded image"} className="w-full h-full object-contain animate-appear" /> )}
                         {!isLoading && !activeDisplayUrl && !error && ( <p className="text-brand-light/50">{t('designStudioDesc')}</p> )}
-                        {sourceImage && !isLoading && ( <button onClick={handleClearImage} className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-black/80 transition-colors z-10" title={t('clearImage')}><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg></button>)}
+                        {activeDisplayUrl && !isLoading && ( <button onClick={handleClearImage} className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-black/80 transition-colors z-10" title={t('clearImage')}><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg></button>)}
                         {activeDataUrl && !savedImages.includes(activeDataUrl) && !isLoading && (<button onClick={handleSaveImage} className="absolute top-2 left-2 px-3 py-1 bg-black/50 text-white rounded-full hover:bg-black/80 transition-colors z-10 flex items-center gap-1 text-sm" title={t('saveToGallery')}><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v1H5V4zM5 7h10v9a2 2 0 01-2 2H7a2 2 0 01-2-2V7z" /></svg>Save</button>)}
+                        {analysisResult && !isLoading && (
+                            <div className="absolute bottom-0 left-0 right-0 max-h-1/3 bg-black/70 backdrop-blur-sm p-3 overflow-y-auto custom-scrollbar">
+                                <p className="text-white text-sm text-left whitespace-pre-wrap">{analysisResult}</p>
+                            </div>
+                        )}
                     </div>
                 </main>
                 ) : activeStudioTab === 'structure' ? (
@@ -624,8 +675,8 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
                         <button onClick={onClose} className={`${actionButtonBaseClasses} text-white bg-brand-accent border-transparent hover:shadow-xl hover:-translate-y-1 active:translate-y-0 active:shadow-lg flex-1`}>{t('back')}</button>
                         
                         {activeStudioTab === 'texture' && (
-                            <button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className={`${actionButtonBaseClasses} text-brand-bg bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)] hover:bg-brand-accent-secondary hover:shadow-[0_6px_0_var(--brand-accent-secondary-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-secondary-shadow)] ${disabledActionButtonClasses} flex-1`}>
-                                {isLoading ? t('generating') : t('generate')}
+                            <button onClick={activeDisplayUrl ? handleEdit : handleGenerate} disabled={isLoading || !prompt.trim()} className={`${actionButtonBaseClasses} text-brand-bg bg-brand-accent-secondary/80 border-brand-accent-secondary shadow-[0_4px_0_var(--brand-accent-secondary-shadow)] hover:bg-brand-accent-secondary hover:shadow-[0_6px_0_var(--brand-accent-secondary-shadow)] active:translate-y-1 active:shadow-[0_2px_0_var(--brand-accent-secondary-shadow)] ${disabledActionButtonClasses} flex-1`}>
+                                {isLoading ? t('generating') : (activeDisplayUrl ? "Edit Image" : t('generate'))}
                             </button>
                         )}
                         {activeStudioTab === 'structure' && (
@@ -639,7 +690,7 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
                             </button>
                         )}
                         {activeStudioTab === 'theme' && (
-                             <button onClick={handleApplyTheme} className={`${actionButtonBaseClasses} ${greenButtonClasses} flex-1`} disabled={!previewTheme}>
+                            <button onClick={handleApplyTheme} disabled={!previewTheme} className={`${actionButtonBaseClasses} ${greenButtonClasses} flex-1 ${!previewTheme ? disabledActionButtonClasses : ''}`}>
                                 {t('applyTheme')}
                             </button>
                         )}

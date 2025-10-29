@@ -1,15 +1,9 @@
 import { useEffect } from 'react';
 import { themes } from '../themes';
-import { loadCustomTheme } from '../services/progressService';
 
 export const useThemeManager = (activeTheme: string) => {
   useEffect(() => {
-    let theme;
-    if (activeTheme === 'custom-generated') {
-      theme = loadCustomTheme() || themes['quantum-foam']; // Fallback to default if custom theme isn't found
-    } else {
-      theme = themes[activeTheme] || themes['quantum-foam']; // Default to quantum-foam
-    }
+    const theme = themes[activeTheme] || themes['quantum-foam']; // Default to quantum-foam
     
     const root = document.documentElement;
     

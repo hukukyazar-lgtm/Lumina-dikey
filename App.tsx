@@ -1,31 +1,33 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import IntroAnimation from './components/IntroAnimation';
-import MapPage from './pages/MapPage';
 import MainLayout from './components/MainLayout';
-import MenuPage from './pages/MenuPage';
-import GamePage from './pages/GamePage';
-import GameOverPage from './pages/GameOverPage';
-import LevelCompletePage from './pages/LevelCompletePage';
-import DuelPage from './pages/DuelPage';
-import DuelGameOverPage from './pages/DuelGameOverPage';
-import DuelRoundOverPage from './pages/DuelRoundOverPage';
-import MemoryGame from './components/MemoryGame';
+// Lazy load page components to split code and reduce initial load time
+const MapPage = lazy(() => import('./pages/MapPage'));
+const MenuPage = lazy(() => import('./pages/MenuPage'));
+const GamePage = lazy(() => import('./pages/GamePage'));
+const GameOverPage = lazy(() => import('./pages/GameOverPage'));
+const LevelCompletePage = lazy(() => import('./pages/LevelCompletePage'));
+const DuelPage = lazy(() => import('./pages/DuelPage'));
+const DuelGameOverPage = lazy(() => import('./pages/DuelGameOverPage'));
+const DuelRoundOverPage = lazy(() => import('./pages/DuelRoundOverPage'));
+const MemoryGame = lazy(() => import('./components/MemoryGame'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const ShopPage = lazy(() => import('./pages/ShopPage'));
+const DesignStudioPage = lazy(() => import('./pages/DesignStudioPage'));
 import ConfirmationModal from './components/ConfirmationModal';
-import LeaderboardPage from './pages/LeaderboardPage';
-import ProfilePage from './pages/ProfilePage';
-import ShopPage from './pages/ShopPage';
-import DesignStudioPage from './pages/DesignStudioPage';
+import LoadingSpinner from './components/LoadingSpinner';
 import { useLanguage } from './components/LanguageContext';
 import { useThemeManager } from './hooks/useThemeManager';
 import { fetchWordChallenge } from './services/geminiService';
 import { saveLocalHighScore } from './services/scoreService';
 import { soundService } from './services/soundService';
-import { saveGuestProgress, loadGuestProgress, clearGuestProgress, saveEndlessHighScore, loadEndlessHighScore, saveEndlessProgress, loadEndlessProgress, clearEndlessProgress, saveTotalMoney, loadTotalMoney, loadPlayerProfile, savePlayerProfile, loadPlayerInventory, savePlayerInventory, saveCustomPlanetImages, loadCustomPlanetImages, saveCustomGameBackgrounds, loadCustomGameBackgrounds, saveCustomButtonTexture, loadCustomButtonTexture, saveCustomMenuBackground, loadCustomMenuBackground, loadCustomButtonStructure, saveCustomCubeStyle, loadCustomCubeStyle, saveCustomCubeTexture, loadCustomCubeTexture, saveCustomTheme } from './services/progressService';
-import type { GameStatus, WordChallenge, Difficulty, LevelProgress, GameMode, WordLength, SavedProgress, SavedEndlessState, PlayerProfile, AchievementConditionState, PlayerInventory, ThemePalette, GameBackgrounds } from './types';
-import { difficultySettings, LIFE_BONUS_INTERVAL, STARTING_LIVES, MEMORY_GAME_INTERVAL, MAX_LIVES, difficultyProgression, difficultyPoints, ENDLESS_TIMER, difficultyAnimations, planetImageUrls, ADVENTURE_GATEWAYS_PER_PLANET, planetBackgroundSizes, achievements, shopItems, cubeColorPalettes, cubeStyles } from './config';
+import { saveGuestProgress, loadGuestProgress, clearGuestProgress, saveEndlessHighScore, loadEndlessHighScore, saveEndlessProgress, loadEndlessProgress, clearEndlessProgress, saveTotalMoney, loadTotalMoney, loadPlayerProfile, savePlayerProfile, loadPlayerInventory, savePlayerInventory, saveCustomTheme } from './services/progressService';
+import type { GameStatus, WordChallenge, Difficulty, LevelProgress, GameMode, WordLength, SavedProgress, SavedEndlessState, PlayerProfile, AchievementConditionState, PlayerInventory, ThemePalette, GameBackgrounds, Language } from './types';
+import { difficultySettings, LIFE_BONUS_INTERVAL, STARTING_LIVES, MEMORY_GAME_INTERVAL, MAX_LIVES, difficultyProgression, difficultyPoints, ENDLESS_TIMER, difficultyAnimations, planetImageUrls, ADVENTURE_GATEWAYS_PER_PLANET, planetBackgroundSizes, achievements, shopItems, cubeColorPalettes } from './config';
 // FIX: Import the 'themes' object to apply cosmetic theme styles to game elements.
 import { themes } from './themes';
+import { turkishWordList, englishWordList } from './services/wordList';
 
 
 // Helper to shuffle the choices array
@@ -40,6 +42,7 @@ const getAnimationKey = (status: GameStatus): string => {
   return status;
 };
 
+const QUEUE_SIZE = 3; // How many AI-generated words to keep ready in the cache.
 
 export default function App() {
   const { gameplayLanguage, t, sfxVolume, musicVolume } = useLanguage();
@@ -68,6 +71,7 @@ export default function App() {
   const [memoryGameWordData, setMemoryGameWordData] = useState<Array<{ word: string; score: number }>>([]);
   const [memoryGameAllChoices, setMemoryGameAllChoices] = useState<string[]>([]);
   const [gameMode, setGameMode] = useState<GameMode>(null);
+  const [answeredWordsHistory, setAnsweredWordsHistory] = useState<string[]>([]);
 
   // New states for level-based progression and crowning
   const [level, setLevel] = useState(1);
@@ -102,44 +106,65 @@ export default function App() {
   const [endlessCheckpoint, setEndlessCheckpoint] = useState<SavedEndlessState | null>(null);
   const [endlessStartingDifficulty, setEndlessStartingDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
 
-  // State for custom images
-  const [customPlanetImages, setCustomPlanetImages] = useState<Record<number, string>>(loadCustomPlanetImages());
-  const [customMenuBackgroundUrl, setCustomMenuBackgroundUrl] = useState<string | null>(loadCustomMenuBackground());
-  const [customGameBackgrounds, setCustomGameBackgrounds] = useState<GameBackgrounds>(loadCustomGameBackgrounds());
-  const [customButtonTextureUrl, setCustomButtonTextureUrl] = useState<string | null>(loadCustomButtonTexture());
-  const [customCubeTextureUrl, setCustomCubeTextureUrl] = useState<string | null>(loadCustomCubeTexture());
-  const [activeCubeStyle, setActiveCubeStyle] = useState<string>(loadCustomCubeStyle() || 'default');
+  // Design Studio State
+  const [customGameBackgrounds, setCustomGameBackgrounds] = useState<GameBackgrounds>({ easy: null, medium: null, hard: null });
+  const [activeCubeStyle, setActiveCubeStyle] = useState('default');
 
   const usedWords = useRef<Set<string>>(new Set());
   const isFirstQuestionOfSession = useRef(true);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Word Caching System
+  const [wordQueue, setWordQueue] = useState<WordChallenge[]>([]);
+  const isFetchingWord = useRef(false);
+
   // Apply the selected theme dynamically
   useThemeManager(playerInventory.activeTheme);
 
-  // Load custom button structure on app start
+  // Progressive background preloading to prevent initial lag
   useEffect(() => {
-    const savedStructure = loadCustomButtonStructure();
-    if (savedStructure && typeof savedStructure === 'object') {
-      Object.entries(savedStructure).forEach(([key, value]) => {
-        document.documentElement.style.setProperty(key, value as string);
-      });
-    }
-  }, []);
+    // This effect runs once after the initial render and intro.
+    // It preloads the remaining planet images in the background sequentially.
+    const remainingImages = planetImageUrls.slice(3);
+    let currentIndex = 0;
 
-  // Apply custom cube style on change
-  useEffect(() => {
-    const styleData = cubeStyles.find(s => s.id === activeCubeStyle);
-    if (styleData) {
-        const root = document.documentElement;
-        Object.entries(styleData.variables).forEach(([key, value]) => {
-            root.style.setProperty(key, value as string);
-        });
-    }
-  }, [activeCubeStyle]);
+    const preloadNext = () => {
+      if (currentIndex >= remainingImages.length) {
+        return; // All images preloaded
+      }
+      const url = remainingImages[currentIndex];
+      const img = new Image();
+      
+      const loadNext = () => {
+          currentIndex++;
+          // Use requestIdleCallback to avoid blocking the main thread on busy moments.
+          if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(preloadNext);
+          } else {
+            setTimeout(preloadNext, 200); // Fallback for browsers without requestIdleCallback
+          }
+      };
 
+      img.onload = loadNext;
+      img.onerror = loadNext; // If an image fails, just move to the next one.
+      
+      if (url) {
+        img.src = url;
+      } else {
+        loadNext(); // If URL is empty/null, skip.
+      }
+    };
 
-    const updatePlayerProfile = useCallback((updater: React.SetStateAction<PlayerProfile>) => {
+    // Start the preloading process after a short delay to ensure the app is interactive.
+    const startPreloadingTimeout = setTimeout(preloadNext, 1000);
+
+    return () => {
+      clearTimeout(startPreloadingTimeout);
+      // No need to stop image loading; the browser handles it.
+    };
+  }, []); // Empty dependency array ensures it runs only once.
+
+  const updatePlayerProfile = useCallback((updater: React.SetStateAction<PlayerProfile>) => {
         setPlayerProfile(prevProfile => {
             const newProfile = typeof updater === 'function' ? updater(prevProfile) : updater;
             savePlayerProfile(newProfile);
@@ -249,7 +274,6 @@ export default function App() {
                 setGameStatus('correct');
                 updateGameMoney(m => m + coinsPerWord);
                 setEndlessWordCount(c => c + 1);
-                usedWords.current.add(word);
                 // NEW SCORING LOGIC
                 const points = timeLeftRef.current + (difficulty ? difficultyPoints[difficulty] * 2 : 2);
                 setEndlessScore(s => s + points);
@@ -309,6 +333,7 @@ export default function App() {
     setGameMode(null);
     setDifficulty(null);
     setIsPaused(false);
+    setAnsweredWordsHistory([]);
   }, [stopTimer]);
 
   const togglePause = useCallback(() => {
@@ -322,10 +347,11 @@ export default function App() {
         // Reset animations for the new game session
         setCurrentAnimationClass(null);
         setCurrentAnimationDuration(null);
+        setAnsweredWordsHistory([]);
         
         const specialThemes = ['theme-gold', 'theme-holo'];
         // Only randomize cube color if no special UI theme or special cube style is active.
-        if (!specialThemes.includes(playerInventory.activeTheme) && activeCubeStyle === 'default') {
+        if (!specialThemes.includes(playerInventory.activeTheme)) {
             const randomPalette = cubeColorPalettes[Math.floor(Math.random() * cubeColorPalettes.length)];
             const root = document.documentElement;
             // Apply only the color variables from the random palette, not font etc.
@@ -408,7 +434,7 @@ export default function App() {
             isFirstQuestionOfSession.current = true; // A new game.
         }
         setGameStatus('loading');
-    }, [playerInventory, activeCubeStyle]);
+    }, [playerInventory]);
 
   const handleOpenProfile = useCallback(() => {
     setPreviousGameStatus(gameStatus);
@@ -424,46 +450,6 @@ export default function App() {
     setPreviousGameStatus(gameStatus);
     setGameStatus('designStudio');
   }, [gameStatus]);
-
-  const handleSetPlanetImage = useCallback((planetIndex: number, imageUrl: string) => {
-    setCustomPlanetImages(prev => {
-        const newImages = { ...prev, [planetIndex]: imageUrl };
-        saveCustomPlanetImages(newImages);
-        return newImages;
-    });
-  }, []);
-
-  const handleSetMenuBackground = useCallback((imageUrl: string) => {
-    setCustomMenuBackgroundUrl(imageUrl);
-    saveCustomMenuBackground(imageUrl);
-  }, []);
-
-  const handleSetPlayerAvatar = useCallback((imageUrl: string) => {
-    updatePlayerProfile(p => ({ ...p, avatar: imageUrl }));
-  }, [updatePlayerProfile]);
-
-  const handleSetGameBackground = useCallback((difficultyGroup: 'easy' | 'medium' | 'hard', imageUrl: string | null) => {
-    setCustomGameBackgrounds(prev => {
-        const newBgs = { ...prev, [difficultyGroup]: imageUrl };
-        saveCustomGameBackgrounds(newBgs);
-        return newBgs;
-    });
-  }, []);
-
-  const handleSetCustomButtonTexture = useCallback((imageUrl: string) => {
-    setCustomButtonTextureUrl(imageUrl);
-    saveCustomButtonTexture(imageUrl);
-  }, []);
-
-  const handleSetCustomCubeTexture = useCallback((imageUrl: string) => {
-    setCustomCubeTextureUrl(imageUrl);
-    saveCustomCubeTexture(imageUrl);
-  }, []);
-
-  const handleSetCustomCubeStyle = useCallback((styleId: string) => {
-    setActiveCubeStyle(styleId);
-    saveCustomCubeStyle(styleId);
-  }, []);
   
     const handlePurchaseItem = useCallback((itemId: string) => {
         const item = shopItems.find(i => i.id === itemId);
@@ -504,44 +490,120 @@ export default function App() {
         updatePlayerInventory(inv => ({...inv, activeTheme: themeId}));
     }, [updatePlayerInventory]);
 
-    const handleSetCustomTheme = useCallback((theme: ThemePalette) => {
-        saveCustomTheme(theme);
-        handleEquipTheme('custom-generated');
-    }, [handleEquipTheme]);
-
     useEffect(() => {
         if (gameStatus === 'intro') {
             const timer = setTimeout(() => {
                 soundService.init();
-                // Load global stats that don't depend on other state
+                // CRITICAL: Load only essential data needed for the map screen.
                 setEndlessHighScore(loadEndlessHighScore());
+                updateGameMoney(loadTotalMoney());
                 
-                // Load master money record and handle one-time migration from old system
-                const savedTotalMoney = loadTotalMoney();
-                const savedEndless = loadEndlessProgress();
-                const initialMoney = Math.max(savedTotalMoney, savedEndless?.gameMoney ?? 0);
-                updateGameMoney(initialMoney); // This sets state and saves to localStorage
-                
-                if (savedEndless) {
-                    setEndlessCheckpoint(savedEndless);
-                    setRoundCount(savedEndless.roundCount);
-                    if (savedEndless.startingDifficulty) {
-                        setEndlessStartingDifficulty(savedEndless.startingDifficulty);
-                    }
-                }
-                
+                // Transition to map immediately after critical loads.
                 setGameStatus('map');
+
+                // DEFERRED: Load heavier, non-critical data in the background after the transition.
+                const loadDeferredData = () => {
+                    const savedEndless = loadEndlessProgress();
+                    if (savedEndless) {
+                        setEndlessCheckpoint(savedEndless);
+                        setRoundCount(savedEndless.roundCount);
+                        if (savedEndless.startingDifficulty) {
+                            setEndlessStartingDifficulty(savedEndless.startingDifficulty);
+                        }
+                        
+                        // One-time migration logic for money from old save system.
+                        const savedTotalMoney = loadTotalMoney();
+                        if ((savedEndless.gameMoney ?? 0) > savedTotalMoney) {
+                            updateGameMoney(savedEndless.gameMoney);
+                        }
+                    }
+                };
+                
+                setTimeout(loadDeferredData, 100);
+
             }, 3500);
             return () => clearTimeout(timer);
         }
+    }, [gameStatus, updateGameMoney]);
 
+    // Word Caching Logic
+    const fillWordQueue = useCallback(async () => {
+        if (isFetchingWord.current || wordQueue.length >= QUEUE_SIZE) {
+            return;
+        }
+
+        isFetchingWord.current = true;
+
+        try {
+            const difficultyToFetch = difficulty || 'Novice';
+            const wordLen = difficultySettings[difficultyToFetch].wordLength;
+
+            // FIX: Create a new Set by spreading the current used words into an array.
+            // This resolves a type inference issue where `wordsToAvoid` was incorrectly
+            // inferred as `Set<unknown>` when creating a new Set directly from the ref's Set.
+            const wordsToAvoid = new Set([...usedWords.current]);
+            wordQueue.forEach(c => wordsToAvoid.add(c.correctWord));
+            
+            const challenge = await fetchWordChallenge(wordLen, gameplayLanguage, wordsToAvoid);
+
+            setWordQueue(prev => {
+                if (prev.some(c => c.correctWord === challenge.correctWord)) {
+                    return prev;
+                }
+                return [...prev, challenge];
+            });
+        } catch (error) {
+            console.error("Failed to fetch word for queue:", error);
+        } finally {
+            isFetchingWord.current = false;
+        }
+    }, [wordQueue, difficulty, gameplayLanguage]);
+
+    useEffect(() => {
+        if (gameStatus === 'map') {
+            // Prime the word queue on the main menu.
+            // Calling multiple times is safe due to guards in fillWordQueue.
+            fillWordQueue();
+            fillWordQueue();
+        }
+    }, [gameStatus, fillWordQueue]);
+
+    const getLocalWord = useCallback((difficulty: Difficulty, language: Language, usedWordsSet: Set<string>): WordChallenge | null => {
+        const wordList = language === 'tr' ? turkishWordList : englishWordList;
+        const wordLen = difficultySettings[difficulty].wordLength;
+        const possibleSets = wordList[wordLen];
+
+        if (!possibleSets) {
+            console.error(`No local word list for length ${wordLen}`);
+            return null;
+        }
+
+        let availableSets = possibleSets.filter(wordSet => !usedWordsSet.has(wordSet[0]));
+
+        if (availableSets.length === 0) {
+            const wordsOfLength = new Set(possibleSets.map(set => set[0]));
+            usedWordsSet.forEach(word => {
+                if (wordsOfLength.has(word)) {
+                    usedWordsSet.delete(word);
+                }
+            });
+            availableSets = possibleSets;
+        }
+
+        const selectedSet = availableSets[Math.floor(Math.random() * availableSets.length)];
+        return {
+            correctWord: selectedSet[0],
+            incorrectWords: selectedSet.slice(1),
+        };
+    }, []);
+
+    useEffect(() => {
         if (gameStatus === 'loading' || gameStatus === 'advancing') {
-            const fetchNewWord = async () => {
+            const getNextWord = () => {
                 let currentDifficulty = difficulty;
-
+    
                 if (gameMode === 'progressive') {
                     const totalGatewaysPassed = Math.floor(roundCount / MEMORY_GAME_INTERVAL);
-                    // Difficulty increases every 2 gateways (10 questions)
                     const difficultyIdx = Math.min(Math.floor(totalGatewaysPassed / 2), difficultyProgression.length - 1);
                     currentDifficulty = difficultyProgression[difficultyIdx];
                     setDifficulty(currentDifficulty);
@@ -560,25 +622,43 @@ export default function App() {
                     currentDifficulty = difficultyProgression[difficultyIdx];
                     setDifficulty(currentDifficulty);
                     
-                    const animationPool = difficultyAnimations[currentDifficulty];
-                    const animClass = animationPool[Math.floor(Math.random() * animationPool.length)];
-                    const animDuration = difficultySettings[currentDifficulty].baseAnimationDuration;
-                    
-                    setCurrentAnimationClass(animClass);
-                    setCurrentAnimationDuration(animDuration);
+                    if (currentDifficulty) { // Make sure it's not null.
+                        const animationPool = difficultyAnimations[currentDifficulty];
+                        const animClass = animationPool[Math.floor(Math.random() * animationPool.length)];
+                        const animDuration = difficultySettings[currentDifficulty].baseAnimationDuration;
+                        
+                        setCurrentAnimationClass(animClass);
+                        setCurrentAnimationDuration(animDuration);
+                    }
                 }
                 
-                if (!currentDifficulty) return;
+                let challenge: WordChallenge | null = null;
+                if (wordQueue.length > 0) {
+                    challenge = wordQueue[0];
+                    setWordQueue(prev => prev.slice(1));
+                } else {
+                    console.warn("Word queue empty, using instant local fallback.");
+                    if (currentDifficulty) {
+                        challenge = getLocalWord(currentDifficulty, gameplayLanguage, usedWords.current);
+                    }
+                }
                 
-                const wordLen = difficultySettings[currentDifficulty].wordLength;
-                const challenge = await fetchWordChallenge(wordLen, gameplayLanguage, usedWords.current);
-
+                // Always try to refill the queue in the background.
+                fillWordQueue();
+    
+                if (!challenge) {
+                    console.error("Fatal: Could not get a word from queue or local list.");
+                    handleReturnToMenu();
+                    return;
+                }
+    
+                usedWords.current.add(challenge.correctWord);
+    
                 setWordChallenge(challenge);
                 const allWordsForChoices = shuffleArray([challenge.correctWord, ...challenge.incorrectWords]);
                 setChoices(allWordsForChoices);
-
                 setSelectedChoice(null);
-
+    
                 if (isFirstQuestionOfSession.current) {
                     setGameStatus('countdown');
                     isFirstQuestionOfSession.current = false;
@@ -587,13 +667,15 @@ export default function App() {
                     if (gameMode === 'duel') {
                         setDuelTurn(1);
                     }
-                    const timerDuration = gameMode === 'endless' ? ENDLESS_TIMER : difficultySettings[currentDifficulty].timer;
-                    setTimeLeft(timerDuration);
+                    if (currentDifficulty) { // Guard against null.
+                        const timerDuration = gameMode === 'endless' ? ENDLESS_TIMER : difficultySettings[currentDifficulty].timer;
+                        setTimeLeft(timerDuration);
+                    }
                 }
             };
-            fetchNewWord();
+            getNextWord();
         }
-    }, [gameStatus, difficulty, gameplayLanguage, gameMode, duelDifficultyIndex, endlessWordCount, roundCount]);
+    }, [gameStatus, difficulty, gameplayLanguage, gameMode, duelDifficultyIndex, endlessWordCount, roundCount, handleReturnToMenu, wordQueue, getLocalWord, fillWordQueue]);
 
     useEffect(() => {
         if (gameStatus === 'countdown') {
@@ -619,51 +701,47 @@ export default function App() {
         }
     }, [gameStatus, difficulty, t, gameMode]);
 
-  useEffect(() => {
-    if (gameStatus !== 'correct' && gameStatus !== 'incorrect') {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      if (gameMode === 'practice') {
-        setGameStatus('advancing');
-      } else if (gameMode === 'endless') {
-        if (roundCount > 0 && (roundCount % MEMORY_GAME_INTERVAL === 0)) {
-            const gatewayNumber = roundCount / MEMORY_GAME_INTERVAL;
-            setCurrentGatewayNumber(gatewayNumber);
-            setGameStatus('memoryGame');
-        } else {
-            setGameStatus('advancing');
+    useEffect(() => {
+        if (gameStatus !== 'correct' && gameStatus !== 'incorrect') {
+            return;
         }
-      } else if (gameMode === 'progressive') {
-        // First, check for game over condition
-        if (gameStatus === 'incorrect' && lives < 1) {
-            soundService.play('gameOver');
-            saveLocalHighScore(playerProfile.name, score, level);
 
-            // Convert points to money and save to the master record
-            const moneyEarned = Math.floor(score / 100);
-            if (moneyEarned > 0) {
-                updateGameMoney(m => m + moneyEarned);
+        if (wordChallenge) {
+            setAnsweredWordsHistory(prev => [...prev, wordChallenge.correctWord]);
+        }
+    
+        const timer = setTimeout(() => {
+            if (gameMode === 'practice') {
+                setGameStatus('advancing');
+            } else if (gameMode === 'endless') {
+                if (roundCount > 0 && (roundCount % MEMORY_GAME_INTERVAL === 0)) {
+                    const gatewayNumber = roundCount / MEMORY_GAME_INTERVAL;
+                    setCurrentGatewayNumber(gatewayNumber);
+                    setGameStatus('memoryGame');
+                } else {
+                    setGameStatus('advancing');
+                }
+            } else if (gameMode === 'progressive') {
+                if (gameStatus === 'incorrect' && lives < 1) {
+                    soundService.play('gameOver');
+                    saveLocalHighScore(playerProfile.name, score, level);
+                    const moneyEarned = Math.floor(score / 100);
+                    if (moneyEarned > 0) {
+                        updateGameMoney(m => m + moneyEarned);
+                    }
+                    setGameStatus('gameOver');
+                } else if (roundCount > 0 && roundCount % MEMORY_GAME_INTERVAL === 0) {
+                    const gatewayNumber = roundCount / MEMORY_GAME_INTERVAL;
+                    setCurrentGatewayNumber(gatewayNumber);
+                    setGameStatus('memoryGame');
+                } else {
+                    setGameStatus('advancing');
+                }
             }
-
-            setGameStatus('gameOver');
-        }
-        // Second, check for Memory Gateway trigger (on ANY question)
-        else if (roundCount > 0 && roundCount % MEMORY_GAME_INTERVAL === 0) {
-            const gatewayNumber = roundCount / MEMORY_GAME_INTERVAL;
-            setCurrentGatewayNumber(gatewayNumber);
-            setGameStatus('memoryGame');
-        }
-        // Otherwise, advance to the next question
-        else {
-            setGameStatus('advancing');
-        }
-      }
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, [gameStatus, lives, gameMode, playerProfile.name, score, level, roundCount, updateGameMoney]);
+        }, 1500);
+    
+        return () => clearTimeout(timer);
+    }, [gameStatus, lives, gameMode, playerProfile.name, score, level, roundCount, updateGameMoney, wordChallenge]);
 
     useEffect(() => {
         if (gameStatus === 'duelRoundOver') {
@@ -830,6 +908,7 @@ export default function App() {
   const renderContent = () => {
     switch (gameStatus) {
         case 'map':
+            const completedGatewayCount = roundCount > 0 ? Math.floor(roundCount / MEMORY_GAME_INTERVAL) : 0;
             return <MapPage 
                 playerProfile={playerProfile}
                 onSelectMode={handleSelectMode}
@@ -839,9 +918,7 @@ export default function App() {
                 onOpenDesignStudio={handleOpenDesignStudio}
                 gameMoney={gameMoney}
                 endlessHighScore={endlessHighScore}
-                endlessProgressCount={roundCount}
-                customPlanetImages={customPlanetImages}
-                customMenuBackgroundUrl={customMenuBackgroundUrl}
+                completedGatewayCount={completedGatewayCount}
             />;
         case 'profile':
             return <ProfilePage
@@ -863,15 +940,39 @@ export default function App() {
         case 'designStudio':
             return <DesignStudioPage
                 onClose={() => setGameStatus(previousGameStatus)}
-                onSetPlanetImage={handleSetPlanetImage}
-                onSetMenuBackground={handleSetMenuBackground}
-                onSetPlayerAvatar={handleSetPlayerAvatar}
-                onSetGameBackground={handleSetGameBackground}
-                onSetCustomButtonTexture={handleSetCustomButtonTexture}
-                onSetCustomCubeTexture={handleSetCustomCubeTexture}
-                onSetCustomCubeStyle={handleSetCustomCubeStyle}
+                onSetPlanetImage={(planetIndex, imageUrl) => {
+                    // This is a simplistic way to update. A more robust solution might
+                    // involve a state management system or context to hold these overrides.
+                    planetImageUrls[planetIndex] = imageUrl;
+                }}
+                onSetMenuBackground={(imageUrl) => {
+                    document.body.style.backgroundImage = `url(${imageUrl})`;
+                }}
+                onSetPlayerAvatar={(imageUrl) => {
+                    updatePlayerProfile(p => ({...p, avatar: imageUrl}));
+                }}
+                onSetGameBackground={(difficultyGroup, imageUrl) => {
+                    setCustomGameBackgrounds(prev => ({...prev, [difficultyGroup]: imageUrl}));
+                }}
+                onSetCustomButtonTexture={(imageUrl) => {
+                     document.documentElement.style.setProperty('--custom-button-texture-url', `url(${imageUrl})`);
+                }}
+                onSetCustomCubeTexture={(imageUrl) => {
+                    document.documentElement.style.setProperty('--custom-cube-texture-url', `url(${imageUrl})`);
+                }}
+                onSetCustomCubeStyle={(styleId) => {
+                    setActiveCubeStyle(styleId);
+                }}
                 activeCubeStyle={activeCubeStyle}
-                onSetCustomTheme={handleSetCustomTheme}
+                onSetCustomTheme={(theme) => {
+                    // Directly apply and save the theme
+                    Object.entries(theme).forEach(([key, value]) => {
+                        if (typeof value === 'string') {
+                            document.documentElement.style.setProperty(key, value);
+                        }
+                    });
+                    saveCustomTheme(theme);
+                }}
                 customGameBackgrounds={customGameBackgrounds}
             />;
         case 'practiceMenu':
@@ -898,7 +999,7 @@ export default function App() {
         case 'correct':
         case 'incorrect':
             if (!difficulty || !wordChallenge) {
-                return <div className="flex items-center justify-center h-full">Loading...</div>;
+                return <div className="flex items-center justify-center h-full"><LoadingSpinner /></div>;
             }
             return (
                 <GamePage
@@ -931,9 +1032,7 @@ export default function App() {
                     animationDuration={currentAnimationDuration}
                     playerInventory={playerInventory}
                     activeTheme={playerInventory.activeTheme}
-                    customGameBackgrounds={customGameBackgrounds}
-                    customButtonTextureUrl={customButtonTextureUrl}
-                    customCubeTextureUrl={customCubeTextureUrl}
+                    answeredWordsHistory={answeredWordsHistory}
                 />
             );
         case 'gameOver':
@@ -999,74 +1098,76 @@ export default function App() {
 
   return (
     <div className="relative w-full h-screen font-sans text-brand-light overflow-hidden">
-      {gameStatus === 'intro' ? (
-        <IntroAnimation />
-      ) : (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={getAnimationKey(gameStatus)}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="w-full h-full"
-          >
-            {renderContent()}
-          </motion.div>
-        </AnimatePresence>
-      )}
-      <AnimatePresence>
-        {isQuitConfirmVisible && (
-          <ConfirmationModal
-            isOpen={isQuitConfirmVisible}
-            onConfirm={() => {
-              setIsQuitConfirmVisible(false);
-              handleReturnToMenu();
-            }}
-            onCancel={() => setIsQuitConfirmVisible(false)}
-            title={t('quitConfirmationTitle')}
-            message={t('quitConfirmationMessage')}
-            confirmTextKey="confirmQuit"
-            cancelTextKey="cancelQuit"
-          />
+      <Suspense fallback={<div className="fixed inset-0 bg-brand-bg flex items-center justify-center"><LoadingSpinner /></div>}>
+        {gameStatus === 'intro' ? (
+          <IntroAnimation />
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={getAnimationKey(gameStatus)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="w-full h-full"
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
         )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {gameStatus === 'continuePrompt' && (
-          <ConfirmationModal
-            isOpen={true}
-            onConfirm={() => {
-              const saved = loadGuestProgress();
-              if (saved) {
-                  setGameMode('progressive');
-                  setScore(saved.score);
-                  setLives(saved.lives);
-                  setLevel(saved.level);
-                  setConsecutiveCorrectAnswers(saved.consecutiveCorrectAnswers);
-                  setRoundCount(saved.roundCount);
-                  setSuccessfulRoundCount(saved.successfulRoundCount);
-                  setMemoryGameWordData(saved.memoryGameWordData);
-                  setMemoryGameAllChoices(saved.memoryGameAllChoices);
-                  usedWords.current = new Set(saved.usedWords);
-                  setTrophyCount(saved.trophyCount);
-                  isFirstQuestionOfSession.current = false; // Skip countdown on continue
-                  setGameStatus('loading');
-              } else {
+        <AnimatePresence>
+          {isQuitConfirmVisible && (
+            <ConfirmationModal
+              isOpen={isQuitConfirmVisible}
+              onConfirm={() => {
+                setIsQuitConfirmVisible(false);
+                handleReturnToMenu();
+              }}
+              onCancel={() => setIsQuitConfirmVisible(false)}
+              title={t('quitConfirmationTitle')}
+              message={t('quitConfirmationMessage')}
+              confirmTextKey="confirmQuit"
+              cancelTextKey="cancelQuit"
+            />
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {gameStatus === 'continuePrompt' && (
+            <ConfirmationModal
+              isOpen={true}
+              onConfirm={() => {
+                const saved = loadGuestProgress();
+                if (saved) {
+                    setGameMode('progressive');
+                    setScore(saved.score);
+                    setLives(saved.lives);
+                    setLevel(saved.level);
+                    setConsecutiveCorrectAnswers(saved.consecutiveCorrectAnswers);
+                    setRoundCount(saved.roundCount);
+                    setSuccessfulRoundCount(saved.successfulRoundCount);
+                    setMemoryGameWordData(saved.memoryGameWordData);
+                    setMemoryGameAllChoices(saved.memoryGameAllChoices);
+                    usedWords.current = new Set(saved.usedWords);
+                    setTrophyCount(saved.trophyCount);
+                    isFirstQuestionOfSession.current = false; // Skip countdown on continue
+                    setGameStatus('loading');
+                } else {
+                  clearGuestProgress();
+                  setGameStatus('map');
+                }
+              }}
+              onCancel={() => {
                 clearGuestProgress();
                 setGameStatus('map');
-              }
-            }}
-            onCancel={() => {
-              clearGuestProgress();
-              setGameStatus('map');
-            }}
-            title={t('continuePromptTitle')}
-            message={t('continuePromptMessage')}
-            confirmTextKey="confirmContinue"
-            cancelTextKey="cancelContinue"
-          />
-        )}
-      </AnimatePresence>
+              }}
+              title={t('continuePromptTitle')}
+              message={t('continuePromptMessage')}
+              confirmTextKey="confirmContinue"
+              cancelTextKey="cancelContinue"
+            />
+          )}
+        </AnimatePresence>
+      </Suspense>
     </div>
   );
 }

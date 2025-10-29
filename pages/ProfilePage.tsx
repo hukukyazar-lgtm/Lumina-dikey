@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useLanguage } from '../components/LanguageContext';
 import { PlayerProfile, Language } from '../types';
 import { achievements, avatars } from '../config';
 import { soundService } from '../services/soundService';
-import LeaderboardPage from './LeaderboardPage';
 import GoldCoinIcon from '../components/GoldCoinIcon';
 import GoldCoinStackIcon from '../components/GoldCoinStackIcon';
+import LoadingSpinner from '../components/LoadingSpinner';
+
+const LeaderboardPage = lazy(() => import('./LeaderboardPage'));
 
 interface ProfilePageProps {
     onClose: () => void;
@@ -16,7 +18,7 @@ interface ProfilePageProps {
     trophyCount: number;
 }
 
-type ProfileTab = 'statistics' | 'achievements' | 'customization' | 'settings' | 'leaderboard';
+type ProfileTab = 'statistics' | 'achievements' | 'leaderboard' | 'customization' | 'settings';
 
 
 // A generic toggle component for switching between options
@@ -105,7 +107,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onClose, playerProfile, setPl
         musicVolume,
         setMusicVolume,
     } = useLanguage();
-    const [activeTab, setActiveTab] = useState<ProfileTab>('statistics');
+    const [activeTab, setActiveTab] = useState<ProfileTab>('settings');
     const [name, setName] = useState(playerProfile.name);
 
     useEffect(() => {
@@ -201,6 +203,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onClose, playerProfile, setPl
             </div>
         </div>
     );
+    
+    const renderLeaderboard = () => (
+        <div className="animate-appear">
+            <Suspense fallback={<div className="flex justify-center items-center h-48"><LoadingSpinner /></div>}>
+                <LeaderboardPage onReturnToMenu={() => {}} isEmbedded />
+            </Suspense>
+        </div>
+    );
 
     const renderSettings = () => {
         const languageOptions = [
@@ -228,12 +238,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onClose, playerProfile, setPl
             </div>
         );
     };
-    
-    const renderLeaderboard = () => (
-      <div className="animate-appear">
-          <LeaderboardPage onReturnToMenu={() => {}} isEmbedded />
-      </div>
-    );
 
     const avatar = playerProfile.avatar;
     const isAvatarUrl = avatar && (avatar.startsWith('data:') || avatar.startsWith('http'));

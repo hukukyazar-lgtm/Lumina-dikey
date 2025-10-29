@@ -7,17 +7,23 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { planetNameTranslationKeys, cubeStyles } from '../config';
 import ChoiceButton from '../components/ChoiceButton';
 import LetterCube from '../components/LetterCube';
+// FIX: Import GameBackgrounds type for new functionality.
+import type { GameBackgrounds } from '../types';
 
-interface DesignStudioPageProps {
+// FIX: Renamed component and props to match filename.
+interface ImageStudioPageProps {
     onClose: () => void;
     onSetPlanetImage: (planetIndex: number, imageUrl: string) => void;
     onSetMenuBackground: (imageUrl: string) => void;
     onSetPlayerAvatar: (imageUrl: string) => void;
-    onSetGameBackground: (imageUrl: string) => void;
+    // FIX: Updated onSetGameBackground prop to accept difficulty and a nullable URL.
+    onSetGameBackground: (difficultyGroup: 'easy' | 'medium' | 'hard', imageUrl: string | null) => void;
     onSetCustomButtonTexture: (imageUrl: string) => void;
     onSetCustomCubeTexture: (imageUrl: string) => void;
     onSetCustomCubeStyle: (styleId: string) => void;
     activeCubeStyle: string;
+    // FIX: Added customGameBackgrounds prop to display current backgrounds.
+    customGameBackgrounds: GameBackgrounds;
 }
 
 type StudioTab = 'texture' | 'structure' | 'cube';
@@ -89,7 +95,7 @@ const dataUrlToParts = (dataUrl: string): { data: string; mimeType: string } => 
 // --- END NEW HELPERS ---
 
 
-const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlanetImage, onSetMenuBackground, onSetPlayerAvatar, onSetGameBackground, onSetCustomButtonTexture, onSetCustomCubeTexture, onSetCustomCubeStyle, activeCubeStyle }) => {
+const ImageStudioPage: React.FC<ImageStudioPageProps> = ({ onClose, onSetPlanetImage, onSetMenuBackground, onSetPlayerAvatar, onSetGameBackground, onSetCustomButtonTexture, onSetCustomCubeTexture, onSetCustomCubeStyle, activeCubeStyle, customGameBackgrounds }) => {
     const { t, gameplayLanguage } = useLanguage();
     const [activeStudioTab, setActiveStudioTab] = useState<StudioTab>('texture');
     
@@ -219,7 +225,7 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
                 resultUrl = await editImage(prompt, sourceImage.data, sourceImage.mimeType);
             } else {
                 // Text-to-image workflow
-                resultUrl = await generateImageFromPrompt(prompt);
+                resultUrl = await generateImageFromPrompt(prompt, '1:1');
             }
             const compressedUrl = await compressImage(resultUrl);
             setGeneratedImageUrl(compressedUrl);
@@ -272,11 +278,16 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
         onClose();
     };
     
-    const handleSetAsGameBG = () => {
+    // FIX: Replaced handleSetAsGameBG with functions that handle per-difficulty backgrounds.
+    const handleSetAsGameBG = (difficulty: 'easy' | 'medium' | 'hard') => {
         if (!activeDataUrl) return;
         soundService.play('select');
-        onSetGameBackground(activeDataUrl);
-        onClose();
+        onSetGameBackground(difficulty, activeDataUrl);
+    };
+
+    const handleClearGameBG = (difficulty: 'easy' | 'medium' | 'hard') => {
+        soundService.play('click');
+        onSetGameBackground(difficulty, null);
     };
     
     const handleSetAsButtonTexture = () => {
@@ -391,6 +402,23 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
             setIsGeneratingPrompt(false);
         }
     };
+    
+    // FIX: Added GameBackgroundManager component to provide UI for setting backgrounds per difficulty.
+    const GameBackgroundManager = () => (
+        <div className="flex-shrink-0 flex flex-col gap-2 p-2 bg-brand-secondary/30 rounded-lg">
+            <h3 className="text-lg font-bold text-brand-light/80 text-left">Game Backgrounds (by Difficulty)</h3>
+            {(['easy', 'medium', 'hard'] as const).map(difficulty => (
+                <div key={difficulty} className="flex items-center gap-2 p-2 bg-brand-secondary/50 rounded-md">
+                    <div className="w-16 h-10 bg-black/20 rounded overflow-hidden flex-shrink-0">
+                        {customGameBackgrounds[difficulty] && <img src={customGameBackgrounds[difficulty]!} alt={`${difficulty} background preview`} className="w-full h-full object-cover" />}
+                    </div>
+                    <span className="flex-grow text-left font-bold text-brand-light/80 capitalize">{t(`difficulty${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}` as any)}</span>
+                    <button onClick={() => handleClearGameBG(difficulty)} className="px-2 py-1 text-xs font-bold bg-brand-accent text-white rounded hover:bg-brand-accent/80" title="Clear">X</button>
+                    <button onClick={() => handleSetAsGameBG(difficulty)} disabled={!activeDataUrl} className={`px-3 py-1 text-xs font-bold rounded ${!activeDataUrl ? 'bg-gray-500 text-gray-300' : 'bg-brand-correct text-black'}`}>Set</button>
+                </div>
+            ))}
+        </div>
+    );
 
     const renderPromptStudio = () => (
         <div className="flex-shrink-0 flex flex-col gap-2 p-3 mt-2 bg-brand-secondary/30 rounded-lg">
@@ -430,8 +458,9 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
                         onClick={() => {}}
                         disabled={false}
                         status={'default'}
-                        // FIX: Add required `revealPercentage` prop for the preview button.
+                        // FIX: Add required `revealPercentage` and `revealDirection` props for the preview button.
                         revealPercentage={100}
+                        revealDirection="easy"
                     />
                 </div>
                 <div className="transform scale-125">
@@ -535,13 +564,13 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
                 <footer className="flex-shrink-0 mt-4 flex flex-col gap-3">
                     {activeStudioTab === 'texture' && (
                     <>
+                        <GameBackgroundManager />
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             <button onClick={handleSetMenuBG} disabled={!activeDataUrl || isLoading} className={`${actionButtonBaseClasses} ${greenButtonClasses} ${disabledActionButtonClasses}`}>{t('setAsMenuBackground')}</button>
                             <button onClick={handleSetAsAvatar} disabled={!activeDataUrl || isLoading} className={`${actionButtonBaseClasses} ${greenButtonClasses} ${disabledActionButtonClasses}`}>{t('setAsAvatar')}</button>
-                            <button onClick={handleSetAsGameBG} disabled={!activeDataUrl || isLoading} className={`${actionButtonBaseClasses} ${greenButtonClasses} ${disabledActionButtonClasses}`}>{t('setAsGameBackground')}</button>
                             <button onClick={handleSetAsButtonTexture} disabled={!activeDataUrl || isLoading} className={`${actionButtonBaseClasses} ${greenButtonClasses} ${disabledActionButtonClasses}`}>{t('setAsButtonStyle')}</button>
                             <button onClick={handleSetAsCubeTexture} disabled={!activeDataUrl || isLoading} className={`${actionButtonBaseClasses} ${greenButtonClasses} ${disabledActionButtonClasses}`}>{t('setAsCubeTexture')}</button>
-                            <div className="flex items-stretch gap-2 bg-brand-secondary/30 p-1 rounded-lg col-span-2 sm:col-span-1">
+                            <div className="flex items-stretch gap-2 bg-brand-secondary/30 p-1 rounded-lg col-span-2 sm:col-span-2">
                                 <select value={selectedPlanetIndex} onChange={(e) => setSelectedPlanetIndex(Number(e.target.value))} disabled={!activeDataUrl || isLoading} className="bg-brand-secondary p-2 rounded-lg text-sm font-bold text-brand-light border-2 border-brand-light/20 focus:outline-none focus:border-brand-accent-secondary custom-scrollbar" aria-label={t('selectPlanet')}>
                                     {planetNameTranslationKeys.map((key, index) => ( <option key={index} value={index}>{t(key as any)}</option> ))}
                                 </select>
@@ -576,4 +605,4 @@ const DesignStudioPage: React.FC<DesignStudioPageProps> = ({ onClose, onSetPlane
     );
 };
 
-export default DesignStudioPage;
+export default ImageStudioPage;

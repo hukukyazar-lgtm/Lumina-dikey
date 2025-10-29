@@ -19,10 +19,18 @@ interface ParticleTimerOverlayProps {
 
 const ParticleTimerOverlay: React.FC<ParticleTimerOverlayProps> = ({ duration, timeLeft }) => {
   const [particles, setParticles] = useState<Particle[]>([]);
-// FIX: Initialize useRef with a value (null) and update the type accordingly.
   const animationFrameId = useRef<number | null>(null);
   const lastSpawnTimeRef = useRef(0);
   const timeLeftRef = useRef(timeLeft);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
 
   useEffect(() => {
     timeLeftRef.current = timeLeft;
@@ -55,6 +63,8 @@ const ParticleTimerOverlay: React.FC<ParticleTimerOverlayProps> = ({ duration, t
     };
 
     const animate = (timestamp: number) => {
+      if (!isMounted.current) return;
+
       setParticles(prevParticles => {
         const newParticles = prevParticles
           .map(p => ({ ...p, y: p.y + p.speed }))
@@ -86,10 +96,9 @@ const ParticleTimerOverlay: React.FC<ParticleTimerOverlayProps> = ({ duration, t
     animationFrameId.current = requestAnimationFrame(animate);
 
     return () => {
-      if (animationFrameId.current) {
+      if (animationFrameId.current !== null) {
         cancelAnimationFrame(animationFrameId.current);
       }
-      setParticles([]);
     };
   }, [duration]);
 

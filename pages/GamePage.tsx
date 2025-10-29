@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import type { GameStatus, WordChallenge, Difficulty, PlayerInventory, GameMode, GameBackgrounds } from '../types';
+import { AnimatePresence, motion } from 'framer-motion';
+import type { GameStatus, WordChallenge, Difficulty, PlayerInventory, GameMode } from '../types';
 import LetterCircle from '../components/LetterCircle';
 import ChoiceButton from '../components/ChoiceButton';
 import Scoreboard from '../components/Scoreboard';
@@ -46,9 +46,7 @@ interface GamePageProps {
   animationDuration: number | null;
   activeTheme: string;
   playerInventory: PlayerInventory;
-  customGameBackgrounds: GameBackgrounds;
-  customButtonTextureUrl: string | null;
-  customCubeTextureUrl: string | null;
+  answeredWordsHistory: string[];
 }
 
 interface FlyingCoin {
@@ -94,9 +92,7 @@ const GamePage: React.FC<GamePageProps> = ({
   animationDuration,
   playerInventory,
   activeTheme,
-  customGameBackgrounds,
-  customButtonTextureUrl,
-  customCubeTextureUrl,
+  answeredWordsHistory,
 }) => {
   const { t } = useLanguage();
   const [displayLives, setDisplayLives] = useState(lives);
@@ -120,8 +116,6 @@ const GamePage: React.FC<GamePageProps> = ({
     }
     return 'hard';
   }, [difficulty]);
-
-  const backgroundUrl = customGameBackgrounds[difficultyGroup];
 
   const isFeedbackState = gameStatus === 'correct' || gameStatus === 'incorrect';
   const shouldBlur = gameStatus === 'countdown' || isPaused;
@@ -151,6 +145,21 @@ const GamePage: React.FC<GamePageProps> = ({
     // Calculate percentage and cap at 100
     return Math.min(100, (timeElapsedInReveal / totalRevealDuration) * 100);
   }, [timeLeft, timerDuration]);
+
+  const isEasyMode = useMemo(() => difficulty === 'Novice' || difficulty === 'Apprentice', [difficulty]);
+  const showWordHistory = useMemo(() => (gameMode === 'progressive' || gameMode === 'practice') && isEasyMode && answeredWordsHistory.length > 0, [gameMode, isEasyMode, answeredWordsHistory]);
+  
+  const listVariants = {
+    visible: {
+      transition: { staggerChildren: 0.1 }
+    },
+    hidden: {}
+  };
+
+  const itemVariants = {
+    visible: { opacity: 1, x: 0 },
+    hidden: { opacity: 0, x: -20 }
+  };
 
 
   useEffect(() => {
@@ -267,13 +276,38 @@ const GamePage: React.FC<GamePageProps> = ({
 
   return (
     <div className="relative w-full h-full">
-       {backgroundUrl && (
-        <div 
-          className="absolute inset-0 z-[-1] bg-cover bg-center transition-opacity duration-500 animate-appear"
-          style={{ backgroundImage: `url(${backgroundUrl})` }}
-        ></div>
-      )}
       <div className="relative w-full h-full flex flex-col items-center justify-between p-2 sm:p-4">
+
+      {showWordHistory && (
+        <motion.div 
+            className="glass-panel absolute top-1/2 left-2 sm:left-4 -translate-y-1/2 z-20 p-2 sm:p-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5 }}
+        >
+            <h3 className="text-xs sm:text-sm font-bold text-brand-light/70 mb-2">{t('previousWords')}</h3>
+            <motion.ul 
+                className="space-y-1"
+                variants={listVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                {answeredWordsHistory.map((word, index) => (
+                    <motion.li 
+                        key={`${word}-${index}`} 
+                        variants={itemVariants} 
+                        className={
+                            index === answeredWordsHistory.length - 1
+                            ? "text-lg sm:text-xl font-mono font-bold text-brand-accent-secondary"
+                            : "text-base sm:text-lg font-mono text-brand-light/50"
+                        }
+                    >
+                        {word}
+                    </motion.li>
+                ))}
+            </motion.ul>
+        </motion.div>
+      )}
 
       {/* Flying Coins for Endless/Practice Mode */}
       {flyingCoins.map(coin => {
@@ -409,7 +443,6 @@ const GamePage: React.FC<GamePageProps> = ({
                     activeTheme={activeTheme}
                     isSpecialCube={isSpecialCube}
                     isExiting={isFeedbackState}
-                    customCubeTextureUrl={customCubeTextureUrl}
                     showCorrectAnimation={gameStatus === 'correct'}
                     showIncorrectAnimation={gameStatus === 'incorrect'}
                 />

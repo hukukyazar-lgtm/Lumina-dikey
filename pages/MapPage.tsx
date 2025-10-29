@@ -1,13 +1,56 @@
-import React, { useRef, useState, useLayoutEffect, useCallback, useEffect } from 'react';
-// FIX: Import Variants type to fix framer-motion type error.
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useLanguage } from '../components/LanguageContext';
 import MoneyDisplay from '../components/MoneyDisplay';
 import EndlessHighScoreDisplay from '../components/EndlessHighScoreDisplay';
-import EndlessJourneyBar from '../components/EndlessJourneyBar';
-import { PlayerProfile, JourneyItem } from '../types';
+import { PlayerProfile } from '../types';
 import { soundService } from '../services/soundService';
-import { planetNameTranslationKeys, planetImageUrls, planetBackgroundSizes } from '../config';
+import { ADVENTURE_GATEWAYS_PER_PLANET } from '../config';
+import NavButton from '../components/NavButton';
+
+// --- START GATEWAY PROGRESS CIRCLE ---
+const TOTAL_SEGMENTS = ADVENTURE_GATEWAYS_PER_PLANET;
+
+const GatewayProgressCircle: React.FC<{ progress: number }> = ({ progress }) => {
+    const radius = 48;
+    const center = 50;
+
+    const getPathForSlice = (index: number): string => {
+        const angle = 360 / TOTAL_SEGMENTS;
+        const startAngle = -90 + index * angle; // Start from top
+        const endAngle = startAngle + angle;
+
+        const startAngleRad = (startAngle * Math.PI) / 180;
+        const endAngleRad = (endAngle * Math.PI) / 180;
+
+        const x1 = center + radius * Math.cos(startAngleRad);
+        const y1 = center + radius * Math.sin(startAngleRad);
+        const x2 = center + radius * Math.cos(endAngleRad);
+        const y2 = center + radius * Math.sin(endAngleRad);
+
+        return `M ${center},${center} L ${x1},${y1} A ${radius},${radius} 0 0 1 ${x2},${y2} Z`;
+    };
+
+    return (
+        <svg viewBox="0 0 100 100" className="w-full h-full">
+            {Array.from({ length: TOTAL_SEGMENTS }).map((_, i) => {
+                const isLit = i < progress;
+                return (
+                    <motion.path
+                        key={i}
+                        d={getPathForSlice(i)}
+                        stroke="var(--brand-primary)"
+                        strokeWidth="1.5"
+                        initial={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                        animate={{ fill: isLit ? 'var(--brand-accent-secondary)' : 'rgba(255, 255, 255, 0.05)' }}
+                        transition={{ duration: 0.5, delay: isLit ? i * 0.1 : 0 }}
+                    />
+                );
+            })}
+        </svg>
+    );
+};
+// --- END GATEWAY PROGRESS CIRCLE ---
 
 // --- START IN-PAGE MODAL COMPONENT ---
 type StartDifficulty = 'easy' | 'medium' | 'hard';
@@ -16,10 +59,10 @@ interface StartGameModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStart: (difficulty: StartDifficulty) => void;
-  planetName: string;
+  title: string;
 }
 
-const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStart, planetName }) => {
+const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStart, title }) => {
   const { t } = useLanguage();
 
   const handleStart = (difficulty: StartDifficulty) => {
@@ -54,7 +97,7 @@ const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStar
       <motion.div
         variants={modalVariants}
         className="w-full max-w-md text-center p-6 sm:p-8 bg-brand-primary backdrop-blur-sm border-2 border-brand-accent-secondary rounded-2xl shadow-2xl shadow-brand-accent-secondary/20">
-        <h2 id="dialog-title" className="text-3xl sm:text-4xl font-black text-brand-light mb-2">{planetName}</h2>
+        <h2 id="dialog-title" className="text-3xl sm:text-4xl font-black text-brand-light mb-2">{title}</h2>
         <p className="text-brand-light/80 mb-6">{t('endlessModeStartTitle')}</p>
         
         <div className="flex flex-col gap-4">
@@ -131,52 +174,6 @@ const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStar
 };
 // --- END IN-PAGE MODAL COMPONENT ---
 
-
-// --- START CONSTANTS & HELPERS (Moved from EndlessJourneyBar) ---
-const PLANETS_PER_UNIVERSE = 24;
-const GATES_PER_PLANET = 6;
-const NODES_PER_PLANET = GATES_PER_PLANET + 1;
-
-const planetColors = [
-    '#004E64', '#8B0000', '#D2691E', '#006400', '#4B0082',
-    '#f97316', '#38bdf8', '#0ea5e9', '#6d28d9', '#be185d',
-    '#16a34a', '#ca8a04', '#ea580c', '#0284c7', '#7c3aed',
-    '#db2777', '#10b981', '#eab308', '#f59e0b', '#0ea5e9',
-    '#8b5cf6', '#ec4899', '#22c55e', '#fde047'
-];
-
-const generateUniverseItems = (universeIndex: number, customPlanetImages: Record<number, string>): JourneyItem[] => {
-    const items: JourneyItem[] = [];
-    const startIndex = universeIndex * PLANETS_PER_UNIVERSE * NODES_PER_PLANET;
-    for (let i = 0; i < PLANETS_PER_UNIVERSE * NODES_PER_PLANET; i++) {
-        const globalIndex = startIndex + i;
-        if (i % NODES_PER_PLANET === 0) {
-            const planetNumber = universeIndex * PLANETS_PER_UNIVERSE + Math.floor(i / NODES_PER_PLANET);
-            items.push({ 
-                type: 'planet', 
-                id: `planet-${globalIndex}`, 
-                color: planetColors[planetNumber % planetColors.length], 
-                nameKey: planetNameTranslationKeys[planetNumber % planetNameTranslationKeys.length],
-                imageUrl: customPlanetImages[planetNumber] || planetImageUrls[planetNumber % planetImageUrls.length],
-                backgroundSize: planetBackgroundSizes[planetNumber % planetBackgroundSizes.length]
-            });
-        } else {
-            items.push({ type: 'gate', id: `gate-${globalIndex}` });
-        }
-    }
-    return items;
-};
-// --- END CONSTANTS & HELPERS ---
-
-
-// --- START SVG ICONS ---
-const ImageStudioIcon: React.FC = () => (
-    <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5.67-1.5 1.5S5.67 15 6.5 15s1.5-.67 1.5-1.5S7.33 12 6.5 12zm3-4C8.67 8 8 8.67 8 9.5S8.67 11 9.5 11s1.5-.67 1.5-1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"/>
-    </svg>
-);
-// --- END SVG IONS ---
-
 interface MapPageProps {
   playerProfile: PlayerProfile;
   onSelectMode: (mode: 'progressive' | 'duel' | 'endless', startingDifficulty?: 'easy' | 'medium' | 'hard') => void;
@@ -186,9 +183,7 @@ interface MapPageProps {
   onOpenDesignStudio: () => void;
   gameMoney: number;
   endlessHighScore: number;
-  endlessProgressCount: number;
-  customPlanetImages: Record<number, string>;
-  customMenuBackgroundUrl: string | null;
+  completedGatewayCount: number;
 }
 
 const MapPage: React.FC<MapPageProps> = ({ 
@@ -200,39 +195,13 @@ const MapPage: React.FC<MapPageProps> = ({
     onOpenDesignStudio,
     gameMoney, 
     endlessHighScore,
-    endlessProgressCount,
-    customPlanetImages,
-    customMenuBackgroundUrl,
+    completedGatewayCount
 }) => {
   const { t } = useLanguage();
-  const scrollContainerRef = useRef<HTMLElement>(null);
-  const [journeyItems, setJourneyItems] = useState<JourneyItem[]>(() => generateUniverseItems(0, customPlanetImages));
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
-  const [selectedNode, setSelectedNode] = useState<JourneyItem | null>(null);
     
-    useEffect(() => {
-        if (!customPlanetImages) return;
-        setJourneyItems(prevItems => {
-            let hasChanged = false;
-            const newItems = prevItems.map((item, index) => {
-                if (item.type === 'planet') {
-                    const planetNumber = Math.floor(index / NODES_PER_PLANET);
-                    const customImage = customPlanetImages[planetNumber];
-                    const defaultImage = planetImageUrls[planetNumber % planetImageUrls.length];
-                    const newImageUrl = customImage || defaultImage;
-                    if (item.imageUrl !== newImageUrl) {
-                        hasChanged = true;
-                        return { ...item, imageUrl: newImageUrl };
-                    }
-                }
-                return item;
-            });
-            return hasChanged ? newItems : prevItems;
-        });
-    }, [customPlanetImages]);
-    
-    const handleNodeClick = useCallback((node: JourneyItem) => {
-        setSelectedNode(node);
+    const handlePlayClick = useCallback(() => {
+        soundService.play('select');
         setIsStartModalOpen(true);
     }, []);
 
@@ -247,34 +216,75 @@ const MapPage: React.FC<MapPageProps> = ({
         
         {/* Header */}
         <header className="w-full flex justify-end items-start p-4 z-20 flex-shrink-0">
-            <div className="flex items-center gap-2">
-                <button 
-                    onClick={onOpenDesignStudio}
-                    className="h-10 flex items-center justify-center bg-gradient-to-br from-brand-secondary/50 to-brand-primary/50 border-brand-light/10 text-purple-400 backdrop-blur-sm border px-3 shadow-bevel-inner rounded-lg transition-transform duration-150 ease-in-out hover:scale-105 active:scale-100"
-                    aria-label={t('designStudioTitle')}
-                    title={t('designStudioTitle')}
-                >
-                    <div className="w-7 h-7"><ImageStudioIcon /></div>
-                </button>
-                <button onClick={onOpenShop} aria-label={t('endlessHighScore')}>
-                    <EndlessHighScoreDisplay score={endlessHighScore} />
-                </button>
-                 <button onClick={onOpenProfile} aria-label={t('gameMoney')}>
-                    <MoneyDisplay money={gameMoney} />
-                </button>
+            <div className="flex items-center gap-4">
+                <EndlessHighScoreDisplay score={endlessHighScore} />
+                <MoneyDisplay money={gameMoney} />
             </div>
         </header>
 
-        {/* Main scrollable content */}
-        <main ref={scrollContainerRef} className="w-full flex-grow relative overflow-y-auto overflow-x-hidden custom-scrollbar pb-32">
-            <EndlessJourneyBar 
-                onNodeClick={handleNodeClick}
-                scrollContainerRef={scrollContainerRef}
-                currentProgressIndex={endlessProgressCount}
-                journeyItems={journeyItems}
-            />
+        {/* Main content with central button */}
+        <main className="w-full flex-grow flex items-center justify-center">
+            <motion.button
+              onClick={handlePlayClick}
+              className="relative w-56 h-56 sm:w-64 sm:h-64 rounded-full flex items-center justify-center font-black text-4xl sm:text-5xl tracking-widest text-white"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {/* Glowing border */}
+              <div 
+                className="absolute inset-[-4px] rounded-full"
+                style={{
+                    border: '4px solid hsl(180, 100%, 70%)',
+                    boxShadow: '0 0 20px hsl(180, 100%, 70%), 0 0 30px hsl(180, 100%, 70%), inset 0 0 10px hsl(180, 100%, 70%)',
+                    filter: 'blur(3px)',
+                }}
+              />
+              {/* Main button body */}
+              <div className="relative w-full h-full bg-[#008B8B] rounded-full flex items-center justify-center shadow-inner">
+                {/* Segment lines */}
+                {[0, 60, 120].map(deg => (
+                    <div key={deg} className="absolute w-[90%] h-[1px] bg-white/20" style={{ transform: `rotate(${deg}deg)` }} />
+                ))}
+                <span className="relative z-10 font-orbitron" style={{textShadow: '0 2px 4px rgba(0,0,0,0.5)'}}>PLAY</span>
+              </div>
+            </motion.button>
         </main>
         
+        <footer className="w-full flex-shrink-0 flex justify-center p-2 z-20">
+            <div className="flex justify-around items-center gap-1 sm:gap-2 bg-brand-primary/70 backdrop-blur-sm border border-brand-light/10 rounded-2xl p-1 w-full max-w-2xl">
+                <NavButton
+                    onClick={() => onSelectMode('progressive')}
+                    label={t('adventureMode')}
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.3.09-3.1a2 2 0 0 0-2.43-2.43c-.79.61-2.26.61-3.1.09z" /><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.87 12.87 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" /><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" /><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" /></svg>}
+                />
+                <NavButton
+                    onClick={onShowPracticeMenu}
+                    label={t('practiceMode')}
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>}
+                />
+                <NavButton
+                    onClick={() => onSelectMode('duel')}
+                    label={t('duelMode')}
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m14.5 17.5-10-10" /><path d="m20.5 3.5-10 10" /><path d="M15 3h6v6" /><path d="M9 21H3v-6" /></svg>}
+                />
+                <NavButton
+                    onClick={onOpenDesignStudio}
+                    label={t('designStudioTitle')}
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>}
+                />
+                <NavButton
+                    onClick={onOpenShop}
+                    label={t('shopTitle')}
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.16" /></svg>}
+                />
+                <NavButton
+                    onClick={onOpenProfile}
+                    label={t('profile')}
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>}
+                />
+            </div>
+        </footer>
+
         <AnimatePresence>
             {isStartModalOpen && (
                 <motion.div>
@@ -282,7 +292,7 @@ const MapPage: React.FC<MapPageProps> = ({
                         isOpen={isStartModalOpen}
                         onClose={() => setIsStartModalOpen(false)}
                         onStart={handleStartGame}
-                        planetName={selectedNode?.nameKey ? t(selectedNode.nameKey as any) : t('endless')}
+                        title={t('endlessMode')}
                     />
                 </motion.div>
             )}

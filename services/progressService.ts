@@ -1,4 +1,4 @@
-import type { SavedProgress, SavedEndlessState, PlayerProfile, PlayerInventory, ThemePalette, GameBackgrounds } from '../types';
+import type { SavedProgress, SavedEndlessState, PlayerProfile, PlayerInventory, ThemePalette } from '../types';
 
 const GUEST_PROGRESS_KEY = 'lumina-guest-progress';
 const ENDLESS_HIGH_SCORE_KEY = 'lumina-endless-high-score';
@@ -6,189 +6,10 @@ const ENDLESS_PROGRESS_KEY = 'lumina-endless-progress';
 const TOTAL_MONEY_KEY = 'lumina-total-money';
 const PLAYER_PROFILE_KEY = 'lumina-player-profile';
 const PLAYER_INVENTORY_KEY = 'lumina-player-inventory';
-const CUSTOM_PLANET_IMAGES_KEY = 'lumina-custom-planet-images'; // Renamed from CUSTOM_WORLD_IMAGE_KEY
-const CUSTOM_MENU_BACKGROUND_KEY = 'lumina-custom-menu-background'; // New key for menu bg
-const CUSTOM_GAME_BACKGROUNDS_KEY = 'lumina-custom-game-backgrounds'; // New key for difficulty-based BGs
-const CUSTOM_BUTTON_TEXTURE_KEY = 'lumina-custom-button-texture';
-const CUSTOM_CUBE_TEXTURE_KEY = 'lumina-custom-cube-texture'; // New key
+// FIX: Add keys for design studio features
+const GENERATED_IMAGES_KEY = 'lumina-generated-images';
 const CUSTOM_BUTTON_STRUCTURE_KEY = 'lumina-custom-button-structure';
-const CUSTOM_CUBE_STYLE_KEY = 'lumina-custom-cube-style'; // New key
-const CUSTOM_GENERATED_IMAGES_KEY = 'lumina-generated-images';
-const CUSTOM_THEME_KEY = 'lumina-custom-theme'; // New key
-
-// --- Custom Theme --- (NEW)
-export const saveCustomTheme = (theme: ThemePalette): void => {
-    try {
-        localStorage.setItem(CUSTOM_THEME_KEY, JSON.stringify(theme));
-    } catch (error) {
-        console.error("Failed to save custom theme:", error);
-    }
-};
-
-export const loadCustomTheme = (): ThemePalette | null => {
-    try {
-        const data = localStorage.getItem(CUSTOM_THEME_KEY);
-        return data ? JSON.parse(data) : null;
-    } catch (error) {
-        console.error("Failed to load custom theme:", error);
-        return null;
-    }
-};
-
-
-// --- Custom Cube Style --- (NEW)
-export const saveCustomCubeStyle = (styleId: string): void => {
-    try {
-        localStorage.setItem(CUSTOM_CUBE_STYLE_KEY, styleId);
-    } catch (error) {
-        console.error("Failed to save custom cube style:", error);
-    }
-};
-
-export const loadCustomCubeStyle = (): string | null => {
-    try {
-        return localStorage.getItem(CUSTOM_CUBE_STYLE_KEY);
-    } catch (error) {
-        console.error("Failed to load custom cube style:", error);
-        return null;
-    }
-};
-
-
-// --- Custom Button Structure ---
-export const saveCustomButtonStructure = (structure: object): void => {
-    try {
-        localStorage.setItem(CUSTOM_BUTTON_STRUCTURE_KEY, JSON.stringify(structure));
-    } catch (error) {
-        console.error("Failed to save custom button structure:", error);
-    }
-};
-
-export const loadCustomButtonStructure = (): object | null => {
-    try {
-        const data = localStorage.getItem(CUSTOM_BUTTON_STRUCTURE_KEY);
-        return data ? JSON.parse(data) : null;
-    } catch (error) {
-        console.error("Failed to load custom button structure:", error);
-        return null;
-    }
-};
-
-
-// --- Custom Button Style / Texture ---
-export const saveCustomButtonTexture = (imageUrl: string): void => {
-    try {
-        localStorage.setItem(CUSTOM_BUTTON_TEXTURE_KEY, imageUrl);
-    } catch (error) {
-        console.error("Failed to save custom button style:", error);
-    }
-};
-
-export const loadCustomButtonTexture = (): string | null => {
-    try {
-        return localStorage.getItem(CUSTOM_BUTTON_TEXTURE_KEY);
-    } catch (error) {
-        console.error("Failed to load custom button style:", error);
-        return null;
-    }
-};
-
-// --- Custom Cube Texture --- (NEW)
-export const saveCustomCubeTexture = (imageUrl: string): void => {
-    try {
-        localStorage.setItem(CUSTOM_CUBE_TEXTURE_KEY, imageUrl);
-    } catch (error) {
-        console.error("Failed to save custom cube texture:", error);
-    }
-};
-
-export const loadCustomCubeTexture = (): string | null => {
-    try {
-        return localStorage.getItem(CUSTOM_CUBE_TEXTURE_KEY);
-    } catch (error) {
-        console.error("Failed to load custom cube texture:", error);
-        return null;
-    }
-};
-
-
-// --- Custom Game Backgrounds (by difficulty) ---
-export const saveCustomGameBackgrounds = (backgrounds: GameBackgrounds): void => {
-    try {
-        localStorage.setItem(CUSTOM_GAME_BACKGROUNDS_KEY, JSON.stringify(backgrounds));
-    } catch (error) {
-        console.error("Failed to save custom game backgrounds:", error);
-    }
-};
-
-export const loadCustomGameBackgrounds = (): GameBackgrounds => {
-    try {
-        const data = localStorage.getItem(CUSTOM_GAME_BACKGROUNDS_KEY);
-        const defaults = { easy: null, medium: null, hard: null };
-        return data ? { ...defaults, ...JSON.parse(data) } : defaults;
-    } catch (error) {
-        console.error("Failed to load custom game backgrounds:", error);
-        return { easy: null, medium: null, hard: null };
-    }
-};
-
-
-// --- Custom Menu Background --- (NEW)
-export const saveCustomMenuBackground = (imageUrl: string): void => {
-    try {
-        localStorage.setItem(CUSTOM_MENU_BACKGROUND_KEY, imageUrl);
-    } catch (error) {
-        console.error("Failed to save custom menu background:", error);
-    }
-};
-
-export const loadCustomMenuBackground = (): string | null => {
-    try {
-        return localStorage.getItem(CUSTOM_MENU_BACKGROUND_KEY);
-    } catch (error) {
-        console.error("Failed to load custom menu background:", error);
-        return null;
-    }
-};
-
-// --- Custom Planet Images --- (MODIFIED)
-export const saveCustomPlanetImages = (images: Record<number, string>): void => {
-    try {
-        localStorage.setItem(CUSTOM_PLANET_IMAGES_KEY, JSON.stringify(images));
-    } catch (error) {
-        console.error("Failed to save custom planet images:", error);
-    }
-};
-
-export const loadCustomPlanetImages = (): Record<number, string> => {
-    try {
-        const data = localStorage.getItem(CUSTOM_PLANET_IMAGES_KEY);
-        return data ? JSON.parse(data) : {};
-    } catch (error) {
-        console.error("Failed to load custom planet images:", error);
-        return {};
-    }
-};
-
-// --- Generated Images Gallery ---
-export const saveGeneratedImages = (images: string[]): void => {
-    try {
-        localStorage.setItem(CUSTOM_GENERATED_IMAGES_KEY, JSON.stringify(images));
-    } catch (error) {
-        console.error("Failed to save generated images:", error);
-    }
-};
-
-export const loadGeneratedImages = (): string[] => {
-    try {
-        const data = localStorage.getItem(CUSTOM_GENERATED_IMAGES_KEY);
-        return data ? JSON.parse(data) : [];
-    } catch (error) {
-        console.error("Failed to load generated images:", error);
-        return [];
-    }
-};
-
+const CUSTOM_THEME_KEY = 'lumina-custom-theme';
 
 // --- Player Inventory ---
 const defaultInventory: PlayerInventory = {
@@ -363,4 +184,39 @@ export const clearEndlessProgress = (): void => {
   } catch (error) {
     console.error("Failed to clear endless progress:", error);
   }
+};
+
+// FIX: Add functions for saving and loading design studio assets to local storage.
+export const saveGeneratedImages = (images: string[]): void => {
+    try {
+        localStorage.setItem(GENERATED_IMAGES_KEY, JSON.stringify(images));
+    } catch (error) {
+        console.error("Failed to save generated images:", error);
+    }
+};
+
+export const loadGeneratedImages = (): string[] => {
+    try {
+        const data = localStorage.getItem(GENERATED_IMAGES_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch (error) {
+        console.error("Failed to load generated images:", error);
+        return [];
+    }
+};
+
+export const saveCustomButtonStructure = (structure: Record<string, string>): void => {
+    try {
+        localStorage.setItem(CUSTOM_BUTTON_STRUCTURE_KEY, JSON.stringify(structure));
+    } catch (error) {
+        console.error("Failed to save custom button structure:", error);
+    }
+};
+
+export const saveCustomTheme = (theme: ThemePalette): void => {
+    try {
+        localStorage.setItem(CUSTOM_THEME_KEY, JSON.stringify(theme));
+    } catch (error) {
+        console.error("Failed to save custom theme:", error);
+    }
 };

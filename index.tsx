@@ -5,12 +5,12 @@ import { LanguageProvider } from './components/LanguageContext';
 import { planetImageUrls } from './config';
 
 // --- START PRELOADING ---
-// Combine all image URLs that need to be preloaded for a smooth experience.
-const allImageUrlsToPreload = [...new Set(planetImageUrls)];
+// Preload only the first few critical images to reduce initial load time.
+// The rest of the images will be lazy-loaded in the background by the App component.
+const criticalImagesToPreload = planetImageUrls.slice(0, 3);
 
-// Start preloading images immediately upon script execution.
-// This allows the browser to fetch them in the background while the rest of the app initializes.
-allImageUrlsToPreload.forEach(url => {
+// Start preloading critical images immediately upon script execution.
+criticalImagesToPreload.forEach(url => {
   if (url) {
     const img = new Image();
     img.src = url;

@@ -1,9 +1,4 @@
-
-
-
-
-
-import { Difficulty, WordLength, Achievement, ShopItem } from './types';
+import { Difficulty, WordLength, Achievement, ShopItem, CubeStyle } from './types';
 
 export const difficultySettings: Record<Difficulty, { wordLength: WordLength, timer: number, baseAnimationDuration: number }> = {
   Novice: { wordLength: 5, timer: 22, baseAnimationDuration: 9 },
@@ -147,102 +142,6 @@ export const cubeColorPalettes = [
     '--cube-face-text-shadow': '0 0 12px #FFFFFF',
   },
   ...glassCubeColorPalettes,
-];
-
-// NEW: Definitive cube styles library
-export const cubeStyles = [
-  {
-    id: 'default',
-    nameKey: 'default',
-    descriptionKey: 'default',
-    variables: {
-      '--cube-face-bg': 'var(--brand-secondary)',
-      '--cube-face-border': 'rgba(0, 240, 255, 0.2)',
-      '--cube-face-text-color': 'var(--brand-accent-secondary)',
-      '--cube-face-text-shadow': '0 0 8px var(--brand-accent-secondary)',
-      '--cube-font-family': "'Orbitron', sans-serif",
-      '--cube-face-extra-animation': 'none',
-    }
-  },
-  {
-    id: 'crystal',
-    nameKey: 'cubeStyleCrystalName',
-    descriptionKey: 'cubeStyleCrystalDesc',
-    variables: {
-      '--cube-face-bg': 'radial-gradient(circle, rgba(173, 216, 230, 0.3) 0%, rgba(26, 14, 42, 0.15) 70%)',
-      '--cube-face-border': 'rgba(255, 255, 255, 0.4)',
-      '--cube-face-text-color': '#FFFFFF',
-      '--cube-face-text-shadow': '0 0 10px #FFFFFF, 0 0 20px #00F0FF',
-      '--cube-font-family': "'Nunito', sans-serif",
-      '--cube-face-extra-animation': 'none',
-    }
-  },
-  {
-    id: 'metal',
-    nameKey: 'cubeStyleMetalName',
-    descriptionKey: 'cubeStyleMetalDesc',
-    variables: {
-      '--cube-face-bg': 'linear-gradient(135deg, #555 0%, #333 100%)',
-      '--cube-face-border': '#222',
-      '--cube-face-text-color': '#E0E0E0',
-      '--cube-face-text-shadow': '0 0 2px #000000',
-      '--cube-font-family': "'Orbitron', sans-serif",
-      '--cube-face-extra-animation': 'none',
-    }
-  },
-  {
-    id: 'wireframe',
-    nameKey: 'cubeStyleWireframeName',
-    descriptionKey: 'cubeStyleWireframeDesc',
-    variables: {
-      '--cube-face-bg': 'transparent',
-      '--cube-face-border': 'var(--brand-accent-secondary)',
-      '--cube-face-text-color': 'var(--brand-accent-secondary)',
-      '--cube-face-text-shadow': '0 0 8px var(--brand-accent-secondary)',
-      '--cube-font-family': "'Share Tech Mono', monospace",
-      '--cube-face-extra-animation': 'none',
-    }
-  },
-  {
-    id: 'blueprint',
-    nameKey: 'cubeStyleBlueprintName',
-    descriptionKey: 'cubeStyleBlueprintDesc',
-    variables: {
-      '--cube-face-bg': 'radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px), radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px), #1d4ed8',
-      '--cube-face-bg-size': '20px 20px, 20px 20px',
-      '--cube-face-border': '#FFFFFF',
-      '--cube-face-text-color': '#FFFFFF',
-      '--cube-face-text-shadow': 'none',
-      '--cube-font-family': "'Share Tech Mono', monospace",
-      '--cube-face-extra-animation': 'none',
-    }
-  },
-  {
-    id: 'wood',
-    nameKey: 'cubeStyleWoodName',
-    descriptionKey: 'cubeStyleWoodDesc',
-    variables: {
-      '--cube-face-bg': 'linear-gradient(45deg, #8B4513, #A0522D)',
-      '--cube-face-border': '#654321',
-      '--cube-face-text-color': '#432109',
-      '--cube-face-text-shadow': '1px 1px 1px #D2B48C',
-      '--cube-font-family': "'Nunito', sans-serif",
-      '--cube-face-extra-animation': 'none',
-    }
-  },
-  {
-    id: 'holographic',
-    nameKey: 'cubeStyleHolographicName',
-    descriptionKey: 'cubeStyleHolographicDesc',
-    variables: {
-      '--cube-face-bg': 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%), repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0, 240, 255, 0.1) 5px, rgba(0, 240, 255, 0.1) 10px)',
-      '--cube-face-border': 'var(--brand-accent-secondary)',
-      '--cube-face-text-color': 'var(--brand-quaternary)',
-      '--cube-face-text-shadow': '0 0 12px var(--brand-accent-secondary)',
-      '--cube-font-family': "'Share Tech Mono', monospace",
-      '--cube-face-extra-animation': 'holo-shift 5s linear infinite',
-    }
-  }
 ];
 
 // New structure for animations based on difficulty
@@ -506,7 +405,95 @@ export const shopItems: ShopItem[] = [
 ];
 
 // --- END SHOP CONFIG ---
-
+// --- START CUBE STYLE CONFIG ---
+// FIX: Add exported cubeStyles object for the Design Studio.
+export const cubeStyles: CubeStyle[] = [
+    {
+        id: 'default',
+        nameKey: 'item_theme_quantum_foam_name', // Reusing a similar name
+        descriptionKey: 'item_theme_quantum_foam_desc',
+        variables: {
+            '--cube-face-bg': 'var(--brand-secondary)',
+            '--cube-face-border': 'rgba(0, 242, 255, 0.3)',
+            '--cube-face-text-color': 'var(--brand-accent-secondary)',
+            '--cube-face-text-shadow': '0 0 8px var(--brand-accent-secondary-glow)',
+            '--cube-font-family': "'Orbitron', sans-serif",
+        },
+    },
+    {
+        id: 'crystal',
+        nameKey: 'cubeStyleCrystalName',
+        descriptionKey: 'cubeStyleCrystalDesc',
+        variables: {
+            '--cube-face-bg': 'radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, rgba(180, 220, 255, 0.1) 80%)',
+            '--cube-face-border': 'rgba(200, 230, 255, 0.5)',
+            '--cube-face-text-color': '#FFFFFF',
+            '--cube-face-text-shadow': '0 0 15px #FFFFFF, 0 0 25px #00FFFF',
+            '--cube-font-family': "'Cinzel', serif",
+        },
+    },
+    {
+        id: 'metal',
+        nameKey: 'cubeStyleMetalName',
+        descriptionKey: 'cubeStyleMetalDesc',
+        variables: {
+            '--cube-face-bg': 'linear-gradient(135deg, #888 0%, #aaa 20%, #777 50%, #bbb 80%, #666 100%)',
+            '--cube-face-border': '#555',
+            '--cube-face-text-color': '#222',
+            '--cube-face-text-shadow': '1px 1px 1px #ddd',
+            '--cube-font-family': "'Roboto Condensed', sans-serif",
+        },
+    },
+    {
+        id: 'wireframe',
+        nameKey: 'cubeStyleWireframeName',
+        descriptionKey: 'cubeStyleWireframeDesc',
+        variables: {
+            '--cube-face-bg': 'transparent',
+            '--cube-face-border': 'var(--brand-accent-secondary)',
+            '--cube-face-text-color': 'var(--brand-accent-secondary)',
+            '--cube-face-text-shadow': '0 0 10px var(--brand-accent-secondary-glow)',
+            '--cube-font-family': "'Share Tech Mono', monospace",
+        },
+    },
+    {
+        id: 'blueprint',
+        nameKey: 'cubeStyleBlueprintName',
+        descriptionKey: 'cubeStyleBlueprintDesc',
+        variables: {
+            '--cube-face-bg': '#1E3A8A', // A dark blue
+            '--cube-face-border': '#60A5FA', // A light blue
+            '--cube-face-text-color': '#EFF6FF', // Off-white
+            '--cube-face-text-shadow': 'none',
+            '--cube-font-family': "'Architects Daughter', cursive",
+        },
+    },
+    {
+        id: 'wood',
+        nameKey: 'cubeStyleWoodName',
+        descriptionKey: 'cubeStyleWoodDesc',
+        variables: {
+            '--cube-face-bg': '#855E42', // A wood color
+            '--cube-face-border': '#5D4037',
+            '--cube-face-text-color': '#D7CCC8',
+            '--cube-face-text-shadow': '1px 1px 2px #3E2723',
+            '--cube-font-family': "'Merriweather', serif",
+        },
+    },
+    {
+        id: 'holographic',
+        nameKey: 'cubeStyleHolographicName',
+        descriptionKey: 'cubeStyleHolographicDesc',
+        variables: {
+            '--cube-face-bg': 'radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, rgba(26, 14, 42, 0.4) 80%)',
+            '--cube-face-border': 'rgba(0, 240, 255, 0.5)',
+            '--cube-face-text-color': 'var(--brand-quaternary)',
+            '--cube-face-text-shadow': '0 0 8px var(--brand-accent-secondary), 0 0 16px var(--brand-accent-secondary-glow)',
+            '--cube-font-family': "'Orbitron', sans-serif",
+        },
+    },
+];
+// --- END CUBE STYLE CONFIG ---
 
 // High-resolution, artistic/illustrative image URLs for planets
 export const planetImageUrls: string[] = [
