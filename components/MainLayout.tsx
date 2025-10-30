@@ -28,21 +28,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, gameStatus, gameMode,
 
     return (
         <div className="relative w-full h-full flex flex-col">
-            <button
-                onClick={onOpenLeaderboard}
-                aria-label={t('leaderboard')}
-                className="group relative top-2 left-2 sm:top-4 sm:left-4 z-50 p-2 rounded-lg transition-all duration-150 ease-in-out hover:bg-white/10 active:scale-95 focus:outline-none focus:ring-2 focus:ring-brand-accent-secondary/50"
-            >
-                <Logo />
-                {/* FIX: Replaced 'menu' with 'practiceMenu' to match a valid GameStatus type. */}
-                {trophyCount > 0 && gameStatus === 'practiceMenu' && (
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 sm:w-7 sm:h-7 bg-brand-primary border-2 border-yellow-400 rounded-full flex items-center justify-center shadow-lg transition-transform duration-200 group-hover:scale-110">
-                        <span className="text-xs sm:text-sm font-bold text-yellow-300" style={{ textShadow: '0 0 5px black' }}>
-                            x{trophyCount}
-                        </span>
-                    </div>
-                )}
-            </button>
             {/* Money Display */}
             {/* FIX: Replaced 'menu' with 'practiceMenu' to match a valid GameStatus type. */}
             {gameStatus === 'practiceMenu' && (

@@ -86,7 +86,7 @@ const ChoiceButton = forwardRef<HTMLButtonElement, ChoiceButtonProps>(({ word, o
           <span className="opacity-0 pointer-events-none">{word}</span>
           {/* Visible, clipped word that reveals over time */}
           <div
-            className="absolute inset-0 flex items-center justify-center transition-all duration-200 ease-linear"
+            className="absolute inset-0 flex items-center justify-center transition-all duration-1000 ease-linear"
             style={{ clipPath: clipPathStyle }}
           >
             <span>{word}</span>

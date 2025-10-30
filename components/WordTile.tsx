@@ -87,6 +87,20 @@ const WordTile: React.FC<WordTileProps> = ({ word, onClick, status, style }) => 
           transition={{ type: 'spring', stiffness: 400, damping: 10 }}
         >
             <span>{word}</span>
+            {(status === 'found' || status === 'missed') && (
+              <div className="absolute top-1 right-1 w-4 h-4 text-white opacity-80" style={{ filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.7))' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            )}
+            {status === 'incorrect' && (
+              <div className="absolute top-1 right-1 w-4 h-4 text-white opacity-80" style={{ filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.7))' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+            )}
         </motion.div>
     </motion.button>
   );

@@ -37,19 +37,8 @@ const MemoryGame: React.FC<MemoryGameProps> = ({ wordsToFind, allChoices, onClos
   const isCheckpointGateway = !isProgressive;
 
   const title = useMemo(() => {
-    if (gatewayNumber === null) {
-      return isProgressive ? t('memoryGatewayProgressiveTitle') : t('memoryGameTitle');
-    }
-
-    const gatewaysPerPlanet = ADVENTURE_GATEWAYS_PER_PLANET;
-    const planetIndex = Math.floor((gatewayNumber - 1) / gatewaysPerPlanet);
-    const gatewayInPlanet = (gatewayNumber - 1) % gatewaysPerPlanet + 1;
-
-    const nameKey = planetNameTranslationKeys[planetIndex % planetNameTranslationKeys.length] as any;
-    const planetName = t(nameKey);
-
-    return t('gatewayTitleMinimalist', { planetName, gateway: gatewayInPlanet });
-  }, [gatewayNumber, isProgressive, t]);
+    return isProgressive ? t('memoryGatewayProgressiveTitle') : t('memoryGameTitle');
+  }, [isProgressive, t]);
 
   // Memoize tile styles to prevent them from changing on every render
   const tileStyles = useMemo(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useLanguage } from '../components/LanguageContext';
 import MoneyDisplay from '../components/MoneyDisplay';
@@ -7,18 +7,39 @@ import { PlayerProfile } from '../types';
 import { soundService } from '../services/soundService';
 import { ADVENTURE_GATEWAYS_PER_PLANET } from '../config';
 import NavButton from '../components/NavButton';
+import { realisticSpaceshipUrl } from '../assets';
 
-// --- START GATEWAY PROGRESS CIRCLE ---
+// --- START INTERACTIVE PLAY BUTTON ---
 const TOTAL_SEGMENTS = ADVENTURE_GATEWAYS_PER_PLANET;
 
-const GatewayProgressCircle: React.FC<{ progress: number }> = ({ progress }) => {
-    const radius = 48;
-    const center = 50;
+const InteractivePlayButton: React.FC<{ progress: number; onClick: () => void; }> = ({ progress, onClick }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [scaleFactor, setScaleFactor] = useState(1);
 
-    const getPathForSlice = (index: number): string => {
+    useLayoutEffect(() => {
+        const updateScale = () => {
+            if (containerRef.current) {
+                // viewBox width is 256. This factor converts viewBox units to pixels.
+                setScaleFactor(containerRef.current.offsetWidth / 256);
+            }
+        };
+        updateScale();
+        const resizeObserver = new ResizeObserver(updateScale);
+        if (containerRef.current) {
+            resizeObserver.observe(containerRef.current);
+        }
+        return () => resizeObserver.disconnect();
+    }, []);
+    
+    const currentSegmentIndex = progress % TOTAL_SEGMENTS;
+    const radius = 110;
+    const center = 128;
+    const innerRadius = 70;
+
+    const getPathForSlice = (index: number) => {
         const angle = 360 / TOTAL_SEGMENTS;
-        const startAngle = -90 + index * angle; // Start from top
-        const endAngle = startAngle + angle;
+        const startAngle = -90 + index * angle + 1.5; // +1.5 for a smaller gap
+        const endAngle = startAngle + angle - 3;   // -3 for a smaller gap
 
         const startAngleRad = (startAngle * Math.PI) / 180;
         const endAngleRad = (endAngle * Math.PI) / 180;
@@ -28,29 +49,177 @@ const GatewayProgressCircle: React.FC<{ progress: number }> = ({ progress }) => 
         const x2 = center + radius * Math.cos(endAngleRad);
         const y2 = center + radius * Math.sin(endAngleRad);
 
-        return `M ${center},${center} L ${x1},${y1} A ${radius},${radius} 0 0 1 ${x2},${y2} Z`;
+        const ix1 = center + innerRadius * Math.cos(startAngleRad);
+        const iy1 = center + innerRadius * Math.sin(startAngleRad);
+        const ix2 = center + innerRadius * Math.cos(endAngleRad);
+        const iy2 = center + innerRadius * Math.sin(endAngleRad);
+
+        return `M ${ix1},${iy1} L ${x1},${y1} A ${radius},${radius} 0 0 1 ${x2},${y2} L ${ix2},${iy2} A ${innerRadius},${innerRadius} 0 0 0 ${ix1},${iy1} Z`;
     };
 
+    const handleSliceClick = (index: number) => {
+        if (index === currentSegmentIndex) {
+            onClick();
+        }
+    };
+    
+    const activeGlowFilterId = "active-glow-filter";
+    const activeFillGradientId = "active-fill-gradient";
+    const completedFillGradientId = "completed-fill-gradient";
+    const inactiveFillGradientId = "inactive-fill-gradient";
+
+    let spaceshipX = 0;
+    let spaceshipY = 0;
+    let spaceshipRotation = 0;
+
+    if (currentSegmentIndex !== null) {
+        const spaceshipRadius = radius + 20; // Radius for spaceship
+        const angleSlice = 360 / TOTAL_SEGMENTS;
+        const midAngleDeg = -90 + (currentSegmentIndex + 0.5) * angleSlice;
+        const midAngleRad = (midAngleDeg * Math.PI) / 180;
+        
+        // SVG coordinates
+        const sx = center + spaceshipRadius * Math.cos(midAngleRad);
+        const sy = center + spaceshipRadius * Math.sin(midAngleRad);
+
+        // This calculation is now done inside the Framer Motion component's `animate` prop
+        // to ensure it updates when `progress` changes.
+        spaceshipRotation = midAngleDeg + (angleSlice / 2) + 90;
+    }
+
+
     return (
-        <svg viewBox="0 0 100 100" className="w-full h-full">
-            {Array.from({ length: TOTAL_SEGMENTS }).map((_, i) => {
-                const isLit = i < progress;
-                return (
-                    <motion.path
-                        key={i}
-                        d={getPathForSlice(i)}
-                        stroke="var(--brand-primary)"
-                        strokeWidth="1.5"
-                        initial={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-                        animate={{ fill: isLit ? 'var(--brand-accent-secondary)' : 'rgba(255, 255, 255, 0.05)' }}
-                        transition={{ duration: 0.5, delay: isLit ? i * 0.1 : 0 }}
-                    />
-                );
-            })}
-        </svg>
+        <div
+            ref={containerRef}
+            className="relative w-64 h-64 sm:w-72 sm:h-72 group"
+            style={{ perspective: '800px' }}
+        >
+            <svg viewBox="0 0 256 256" className="absolute inset-0 overflow-visible">
+                <defs>
+                    <filter id={activeGlowFilterId} x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+                        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 2 0" result="glow" />
+                        <feComposite in="glow" in2="SourceGraphic" operator="over" />
+                    </filter>
+                    
+                    <radialGradient id={activeFillGradientId}>
+                        <stop offset="0%" stopColor="hsl(180, 100%, 85%)" />
+                        <stop offset="100%" stopColor="var(--brand-accent-secondary)" />
+                    </radialGradient>
+                    <radialGradient id={completedFillGradientId}>
+                        <stop offset="0%" stopColor="hsl(180, 80%, 50%)" />
+                        <stop offset="100%" stopColor="hsl(180, 90%, 25%)" />
+                    </radialGradient>
+                    <radialGradient id={inactiveFillGradientId}>
+                        <stop offset="0%" stopColor="hsl(260, 50%, 15%)" />
+                        <stop offset="100%" stopColor="hsl(260, 50%, 8%)" />
+                    </radialGradient>
+                </defs>
+                
+                <g style={{ transformOrigin: "center" }}>
+                    {Array.from({ length: TOTAL_SEGMENTS }).map((_, i) => {
+                        const isCurrent = i === currentSegmentIndex;
+                        const isCompleted = i < currentSegmentIndex;
+
+                        const fill = isCurrent ? `url(#${activeFillGradientId})` : isCompleted ? `url(#${completedFillGradientId})` : `url(#${inactiveFillGradientId})`;
+                        const stroke = isCurrent ? "hsl(180, 100%, 90%)" : isCompleted ? "hsl(180, 70%, 60%)" : "hsl(260, 30%, 25%)";
+                        const strokeWidth = isCurrent ? 2 : 1;
+                        const filter = isCurrent ? `url(#${activeGlowFilterId})` : 'none';
+                        const zIndex = isCurrent ? 10 : isCompleted ? 5 : 1;
+
+                        return (
+                             <motion.g
+                                key={i}
+                                style={{ transformOrigin: "center", zIndex, cursor: isCurrent ? 'pointer' : 'default' }}
+                                whileHover={ isCurrent ? { rotateX: -15, translateZ: 20, scale: 1.05 } : { translateZ: 5 }}
+                                whileTap={isCurrent ? { scale: 0.95 } : {}}
+                                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                                animate={{
+                                    scale: isCurrent ? [1, 1.03, 1] : 1,
+                                }}
+                            >
+                                <motion.path
+                                    d={getPathForSlice(i)}
+                                    fill={fill}
+                                    stroke={stroke}
+                                    strokeWidth={strokeWidth}
+                                    style={{ filter }}
+                                    onClick={() => handleSliceClick(i)}
+                                    animate={{
+                                        filter: isCurrent ? ['brightness(1.5)', 'brightness(2.2)', 'brightness(1.5)'] : 'brightness(1)',
+                                    }}
+                                    transition={{
+                                        default: { duration: 0.3 },
+                                        filter: isCurrent ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" } : {},
+                                    }}
+                                />
+                            </motion.g>
+                        );
+                    })}
+                </g>
+            </svg>
+
+            <AnimatePresence>
+                {currentSegmentIndex !== null && (
+                    <motion.div
+                        className="absolute"
+                        style={{ top: 0, left: 0, transformOrigin: 'center' }}
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{
+                            opacity: 1, 
+                            scale: 1,
+                            ...(() => {
+                                const spaceshipRadius = radius + 20;
+                                const angleSlice = 360 / TOTAL_SEGMENTS;
+                                const midAngleDeg = -90 + (currentSegmentIndex + 0.5) * angleSlice;
+                                const midAngleRad = (midAngleDeg * Math.PI) / 180;
+                                const sx = center + spaceshipRadius * Math.cos(midAngleRad);
+                                const sy = center + spaceshipRadius * Math.sin(midAngleRad);
+                                return {
+                                    x: `${sx * scaleFactor}px`,
+                                    y: `${sy * scaleFactor}px`,
+                                    rotate: midAngleDeg + (angleSlice / 2) + 90
+                                };
+                            })(),
+                        }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        transition={{ 
+                            type: 'spring', 
+                            stiffness: 400, 
+                            damping: 20,
+                            opacity: { duration: 0.3 }, 
+                            scale: { duration: 0.3 }
+                        }}
+                    >
+                        <motion.div
+                            animate={{ y: [0, -5, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                            <img 
+                                src={realisticSpaceshipUrl} 
+                                alt="Spaceship Icon" 
+                                className="w-8 h-8"
+                                style={{ filter: 'drop-shadow(0 0 8px var(--brand-warning))' }}
+                            />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <motion.span 
+                    className="relative z-10 font-orbitron text-4xl sm:text-5xl font-black text-white"
+                    style={{textShadow: '0 2px 8px rgba(0,0,0,0.7)'}}
+                    animate={{ textShadow: ["0 2px 8px rgba(0, 242, 255, 0.3)", "0 2px 16px rgba(0, 242, 255, 0.7)", "0 2px 8px rgba(0, 242, 255, 0.3)"] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                >
+                    PLAY
+                </motion.span>
+            </div>
+        </div>
     );
 };
-// --- END GATEWAY PROGRESS CIRCLE ---
+// --- END INTERACTIVE PLAY BUTTON ---
 
 // --- START IN-PAGE MODAL COMPONENT ---
 type StartDifficulty = 'easy' | 'medium' | 'hard';
@@ -224,30 +393,7 @@ const MapPage: React.FC<MapPageProps> = ({
 
         {/* Main content with central button */}
         <main className="w-full flex-grow flex items-center justify-center">
-            <motion.button
-              onClick={handlePlayClick}
-              className="relative w-56 h-56 sm:w-64 sm:h-64 rounded-full flex items-center justify-center font-black text-4xl sm:text-5xl tracking-widest text-white"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {/* Glowing border */}
-              <div 
-                className="absolute inset-[-4px] rounded-full"
-                style={{
-                    border: '4px solid hsl(180, 100%, 70%)',
-                    boxShadow: '0 0 20px hsl(180, 100%, 70%), 0 0 30px hsl(180, 100%, 70%), inset 0 0 10px hsl(180, 100%, 70%)',
-                    filter: 'blur(3px)',
-                }}
-              />
-              {/* Main button body */}
-              <div className="relative w-full h-full bg-[#008B8B] rounded-full flex items-center justify-center shadow-inner">
-                {/* Segment lines */}
-                {[0, 60, 120].map(deg => (
-                    <div key={deg} className="absolute w-[90%] h-[1px] bg-white/20" style={{ transform: `rotate(${deg}deg)` }} />
-                ))}
-                <span className="relative z-10 font-orbitron" style={{textShadow: '0 2px 4px rgba(0,0,0,0.5)'}}>PLAY</span>
-              </div>
-            </motion.button>
+            <InteractivePlayButton progress={completedGatewayCount} onClick={handlePlayClick} />
         </main>
         
         <footer className="w-full flex-shrink-0 flex justify-center p-2 z-20">

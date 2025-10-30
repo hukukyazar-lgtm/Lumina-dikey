@@ -6,10 +6,10 @@ const ENDLESS_PROGRESS_KEY = 'lumina-endless-progress';
 const TOTAL_MONEY_KEY = 'lumina-total-money';
 const PLAYER_PROFILE_KEY = 'lumina-player-profile';
 const PLAYER_INVENTORY_KEY = 'lumina-player-inventory';
-// FIX: Add keys for design studio features
 const GENERATED_IMAGES_KEY = 'lumina-generated-images';
 const CUSTOM_BUTTON_STRUCTURE_KEY = 'lumina-custom-button-structure';
 const CUSTOM_THEME_KEY = 'lumina-custom-theme';
+const CUSTOM_MENU_BG_KEY = 'lumina-custom-menu-bg';
 
 // --- Player Inventory ---
 const defaultInventory: PlayerInventory = {
@@ -186,7 +186,7 @@ export const clearEndlessProgress = (): void => {
   }
 };
 
-// FIX: Add functions for saving and loading design studio assets to local storage.
+// --- Design Studio ---
 export const saveGeneratedImages = (images: string[]): void => {
     try {
         localStorage.setItem(GENERATED_IMAGES_KEY, JSON.stringify(images));
@@ -219,4 +219,21 @@ export const saveCustomTheme = (theme: ThemePalette): void => {
     } catch (error) {
         console.error("Failed to save custom theme:", error);
     }
+};
+
+export const saveCustomMenuBackground = (imageUrl: string): void => {
+  try {
+    localStorage.setItem(CUSTOM_MENU_BG_KEY, imageUrl);
+  } catch (error) {
+    console.error("Failed to save custom menu background:", error);
+  }
+};
+
+export const loadCustomMenuBackground = (): string | null => {
+  try {
+    return localStorage.getItem(CUSTOM_MENU_BG_KEY);
+  } catch (error) {
+    console.error("Failed to load custom menu background:", error);
+    return null;
+  }
 };

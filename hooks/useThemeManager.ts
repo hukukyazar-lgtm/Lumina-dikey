@@ -1,23 +1,80 @@
 import { useEffect } from 'react';
 import { themes } from '../themes';
+import type { ThemePalette, GameStatus, Difficulty, GameBackgrounds } from '../types';
 
-export const useThemeManager = (activeTheme: string) => {
+/**
+ * Applies a theme palette's CSS variables to the document root.
+ * @param palette The theme palette to apply.
+ */
+const applyTheme = (palette: ThemePalette) => {
+  const root = document.documentElement;
+  
+  Object.entries(palette).forEach(([key, value]) => {
+    if (value) {
+      root.style.setProperty(key, value);
+    }
+  });
+
+  const defaultKeys = Object.keys(themes.default);
+  defaultKeys.forEach(key => {
+    if (!palette.hasOwnProperty(key)) {
+        if (!key.startsWith('--custom-button') && key !== '--background-image-override') {
+             root.style.removeProperty(key);
+        }
+    }
+  });
+};
+
+/**
+ * Custom hook to manage and apply UI themes, including dynamic backgrounds.
+ */
+export const useThemeManager = (
+    activeThemeId: string, 
+    customTheme: ThemePalette | null,
+    customMenuBackground: string | null,
+    gameStatus: GameStatus,
+    difficulty: Difficulty,
+    customGameBackgrounds: GameBackgrounds
+) => {
   useEffect(() => {
-    const theme = themes[activeTheme] || themes['quantum-foam']; // Default to quantum-foam
-    
-    const root = document.documentElement;
-    
-    // Set data-theme attribute for CSS-based theme switching
-    root.setAttribute('data-theme', activeTheme);
+    let themeToApply: ThemePalette | undefined;
 
-    // Set all CSS variables from the theme object
-    Object.entries(theme).forEach(([key, value]) => {
-      // FIX: Use a `typeof` check as a type guard to satisfy TypeScript that `value` is a string.
-      // This correctly handles `undefined` values from the theme object and allows empty strings.
-      if (typeof value === 'string') {
-        root.style.setProperty(key, value);
-      }
-    });
+    if (activeThemeId === 'custom' && customTheme) {
+      themeToApply = customTheme;
+    } else {
+      themeToApply = themes[activeThemeId];
+    }
+    
+    if (!themeToApply) {
+      themeToApply = themes.default;
+    }
 
-  }, [activeTheme]);
+    applyTheme(themeToApply);
+
+    // --- CENTRALIZED BACKGROUND LOGIC ---
+    const body = document.body;
+    const isGameActive = ['playing', 'countdown', 'correct', 'incorrect', 'advancing', 'duelPlaying'].includes(gameStatus);
+    
+    const easy: Difficulty[] = ['Novice', 'Apprentice', 'Adept'];
+    const medium: Difficulty[] = ['Skilled', 'Seasoned', 'Veteran'];
+    const difficultyGroup = easy.includes(difficulty) ? 'easy' : medium.includes(difficulty) ? 'medium' : 'hard';
+
+    const customGameBg = customGameBackgrounds[difficultyGroup];
+
+    let finalBackgroundImage = '';
+
+    if (isGameActive && customGameBg) {
+        finalBackgroundImage = `url(${customGameBg})`;
+    } else if (customMenuBackground) {
+        finalBackgroundImage = `url(${customMenuBackground})`;
+    } else if (themeToApply && themeToApply['--background-image-override']) {
+        finalBackgroundImage = themeToApply['--background-image-override'];
+    }
+
+    // Apply the chosen background
+    body.style.backgroundImage = finalBackgroundImage;
+    body.style.backgroundSize = 'cover';
+    body.style.backgroundPosition = 'center';
+
+  }, [activeThemeId, customTheme, customMenuBackground, gameStatus, difficulty, customGameBackgrounds]);
 };
